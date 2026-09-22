@@ -26,6 +26,12 @@ export async function addSnack(snack: Omit<Snack, 'id'>): Promise<Snack> {
   return newSnack;
 }
 
+export async function updateSnack(id: string, updates: Omit<Snack, 'id'>): Promise<void> {
+  const existing = await getAllSnacks();
+  const updated = existing.map((s) => (s.id === id ? { ...updates, id } : s));
+  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+}
+
 export async function deleteSnack(id: string): Promise<void> {
   const existing = await getAllSnacks();
   const updated = existing.filter((s) => s.id !== id);
@@ -48,12 +54,13 @@ export function getSnacksForWeek(snacks: Snack[], weekStart: Date): Snack[] {
   return snacks.filter((s) => s.timestamp >= start.getTime() && s.timestamp < end.getTime());
 }
 
-// Monday-start week, matching the week-overview chart.
+// Sunday-start week, matching the week-overview chart.
+// TODO: auto-detect the week start day from the device's locale/regional
+// settings instead of hardcoding Sunday.
 export function getCurrentWeekStart(reference: Date = new Date()): Date {
   const d = new Date(reference);
   const day = d.getDay(); // 0 = Sunday
-  const diffToMonday = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diffToMonday);
+  d.setDate(d.getDate() - day);
   d.setHours(0, 0, 0, 0);
   return d;
 }

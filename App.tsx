@@ -7,12 +7,15 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import OnboardingScreen, { hasOnboarded } from './src/screens/OnboardingScreen';
 import LogScreen from './src/screens/LogScreen';
 import TodayScreen from './src/screens/TodayScreen';
+import EditSnackScreen from './src/screens/EditSnackScreen';
 import { colors } from './src/theme/colors';
+import { Snack } from './src/types/snack';
 
 export type RootStackParamList = {
   Onboarding: undefined;
   Log: undefined;
   Today: undefined;
+  EditSnack: { snack: Snack };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -45,6 +48,7 @@ export default function App() {
           <Stack.Screen name="Onboarding" component={OnboardingScreen} />
           <Stack.Screen name="Log" component={LogScreen} />
           <Stack.Screen name="Today" component={TodayScreen} />
+          <Stack.Screen name="EditSnack" component={EditSnackScreen} />
         </Stack.Navigator>
       </NavigationContainer>
       <StatusBar style="dark" />

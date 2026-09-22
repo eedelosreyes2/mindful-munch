@@ -2,34 +2,26 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
+  Keyboard,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
   Animated,
 } from 'react-native';
-import { colors, reasonColors, reasonColorsMuted } from '../theme/colors';
-import { REASON_TAGS, REASON_LABELS, ReasonTag } from '../types/snack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { colors } from '../theme/colors';
 import { addSnack } from '../storage/snackStorage';
+import SnackForm, { SnackFormValues } from '../components/SnackForm';
 
 export default function LogScreen({ navigation }: any) {
-  const [text, setText] = useState('');
-  const [selectedReason, setSelectedReason] = useState<ReasonTag | undefined>(undefined);
+  const insets = useSafeAreaInsets();
   const [confirmAnim] = useState(new Animated.Value(0));
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleLog = async () => {
-    if (!text.trim()) return;
-
-    await addSnack({
-      text: text.trim(),
-      timestamp: Date.now(),
-      reason: selectedReason,
-    });
-
-    setText('');
-    setSelectedReason(undefined);
+  const handleLog = async (values: SnackFormValues) => {
+    await addSnack(values);
 
     // Quick, satisfying confirmation — this is the "reward" moment.
     setShowConfirm(true);
@@ -46,66 +38,24 @@ export default function LogScreen({ navigation }: any) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={styles.content}>
-        <Text style={styles.heading}>Log a snack</Text>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <View style={styles.content}>
+          <Text style={styles.heading}>Log a snack</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Cookie, chips, leftovers…"
-          placeholderTextColor={colors.textMuted}
-          value={text}
-          onChangeText={setText}
-          returnKeyType="done"
-          onSubmitEditing={handleLog}
-          autoFocus
-        />
+          <SnackForm submitLabel="Log it" onSubmit={handleLog} resetAfterSubmit />
 
-        <Text style={styles.subheading}>Why? (optional)</Text>
-        <View style={styles.tagRow}>
-          {REASON_TAGS.map((tag) => {
-            const isSelected = selectedReason === tag;
-            return (
-              <TouchableOpacity
-                key={tag}
-                onPress={() => setSelectedReason(isSelected ? undefined : tag)}
-                style={[
-                  styles.tagChip,
-                  {
-                    backgroundColor: isSelected ? reasonColors[tag] : reasonColorsMuted[tag],
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.tagText,
-                    { color: isSelected ? '#FFFFFF' : colors.textSecondary },
-                  ]}
-                >
-                  {REASON_LABELS[tag]}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+          <TouchableOpacity onPress={() => navigation.navigate('Today')}>
+            <Text style={styles.linkText}>View log →</Text>
+          </TouchableOpacity>
         </View>
-
-        <TouchableOpacity
-          style={[styles.logButton, !text.trim() && styles.logButtonDisabled]}
-          onPress={handleLog}
-          disabled={!text.trim()}
-        >
-          <Text style={styles.logButtonText}>Log it</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => navigation.navigate('Today')}>
-          <Text style={styles.linkText}>See today →</Text>
-        </TouchableOpacity>
-      </View>
+      </TouchableWithoutFeedback>
 
       {showConfirm && (
         <Animated.View
           pointerEvents="none"
           style={[
             styles.confirmBadge,
+            { top: insets.top + 12 },
             {
               opacity: confirmAnim,
               transform: [
@@ -142,52 +92,6 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: 20,
   },
-  input: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    fontSize: 17,
-    color: colors.textPrimary,
-    marginBottom: 32,
-  },
-  subheading: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 12,
-  },
-  tagRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 40,
-  },
-  tagChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  tagText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  logButton: {
-    backgroundColor: colors.accent,
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  logButtonDisabled: {
-    opacity: 0.35,
-  },
-  logButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
   linkText: {
     color: colors.textSecondary,
     fontSize: 15,
@@ -195,7 +99,6 @@ const styles = StyleSheet.create({
   },
   confirmBadge: {
     position: 'absolute',
-    top: 24,
     alignSelf: 'center',
     backgroundColor: colors.textPrimary,
     paddingHorizontal: 20,

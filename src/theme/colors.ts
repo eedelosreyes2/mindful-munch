@@ -9,6 +9,9 @@ export const colors = {
   textMuted: '#A39D8F',
   border: '#E4DFD3',
   accent: '#2B2A27',
+  
+  // Muted, not a bright alert red — used sparingly for the one destructive action (delete).
+  danger: '#B3543F',
 };
 
 // Deliberately muted/desaturated — no bright "alert" colors.
