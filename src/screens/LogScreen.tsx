@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -10,18 +10,29 @@ import {
   Platform,
   Animated,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors } from '../theme/colors';
-import { addSnack } from '../storage/snackStorage';
+import { ThemeColors, useTheme } from '../theme/colors';
+import { addSnack, getAllSnacks, getFrequentSnackTexts } from '../storage/snackStorage';
 import SnackForm, { SnackFormValues } from '../components/SnackForm';
 
 export default function LogScreen({ navigation }: any) {
+  const colors = useTheme();
+  const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const [confirmAnim] = useState(new Animated.Value(0));
   const [showConfirm, setShowConfirm] = useState(false);
+  const [quickSelectOptions, setQuickSelectOptions] = useState<string[]>([]);
+
+  const loadQuickSelectOptions = useCallback(() => {
+    getAllSnacks().then((all) => setQuickSelectOptions(getFrequentSnackTexts(all)));
+  }, []);
+
+  useFocusEffect(loadQuickSelectOptions);
 
   const handleLog = async (values: SnackFormValues) => {
     await addSnack(values);
+    loadQuickSelectOptions();
 
     // Quick, satisfying confirmation — this is the "reward" moment.
     setShowConfirm(true);
@@ -42,7 +53,12 @@ export default function LogScreen({ navigation }: any) {
         <View style={styles.content}>
           <Text style={styles.heading}>Log a snack</Text>
 
-          <SnackForm submitLabel="Log it" onSubmit={handleLog} resetAfterSubmit />
+          <SnackForm
+            submitLabel="Log it"
+            onSubmit={handleLog}
+            resetAfterSubmit
+            quickSelectOptions={quickSelectOptions}
+          />
 
           <TouchableOpacity onPress={() => navigation.navigate('Today')}>
             <Text style={styles.linkText}>View log →</Text>
@@ -76,38 +92,40 @@ export default function LogScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 80,
-  },
-  heading: {
-    fontSize: 26,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: 20,
-  },
-  linkText: {
-    color: colors.textSecondary,
-    fontSize: 15,
-    textAlign: 'center',
-  },
-  confirmBadge: {
-    position: 'absolute',
-    alignSelf: 'center',
-    backgroundColor: colors.textPrimary,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  confirmText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-});
+function getStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    content: {
+      flex: 1,
+      paddingHorizontal: 24,
+      paddingTop: 104,
+    },
+    heading: {
+      fontSize: 26,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      marginBottom: 20,
+    },
+    linkText: {
+      color: colors.textSecondary,
+      fontSize: 15,
+      textAlign: 'center',
+    },
+    confirmBadge: {
+      position: 'absolute',
+      alignSelf: 'center',
+      backgroundColor: colors.accent,
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 20,
+    },
+    confirmText: {
+      color: colors.onAccent,
+      fontSize: 14,
+      fontWeight: '500',
+    },
+  });
+}

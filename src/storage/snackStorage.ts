@@ -38,6 +38,28 @@ export async function deleteSnack(id: string): Promise<void> {
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
 }
 
+export function getFrequentSnackTexts(snacks: Snack[], limit = 5): string[] {
+  const counts = new Map<string, { count: number; label: string; lastUsed: number }>();
+  for (const s of snacks) {
+    const key = s.text.trim().toLowerCase();
+    if (!key) continue;
+    const existing = counts.get(key);
+    if (existing) {
+      existing.count += 1;
+      if (s.timestamp > existing.lastUsed) {
+        existing.lastUsed = s.timestamp;
+        existing.label = s.text.trim();
+      }
+    } else {
+      counts.set(key, { count: 1, label: s.text.trim(), lastUsed: s.timestamp });
+    }
+  }
+  return Array.from(counts.values())
+    .sort((a, b) => b.count - a.count || b.lastUsed - a.lastUsed)
+    .slice(0, limit)
+    .map((entry) => entry.label);
+}
+
 export function getSnacksForDay(snacks: Snack[], date: Date): Snack[] {
   const start = new Date(date);
   start.setHours(0, 0, 0, 0);

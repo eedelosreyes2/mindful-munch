@@ -12,8 +12,8 @@ import {
   Dimensions,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { colors } from '../theme/colors';
-import { REASON_LABELS, Snack } from '../types/snack';
+import { ThemeColors, useTheme } from '../theme/colors';
+import { REASON_LABELS, REASON_TAGS, Snack } from '../types/snack';
 import {
   getAllSnacks,
   getSnacksForDay,
@@ -112,6 +112,30 @@ function formatDayLabel(date: Date, dayOffset: number): string {
   return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
+function summarizeBucket(bucket: Bucket): string | null {
+  const segments: { name: string; count: number }[] = [];
+  let total = 0;
+  for (const tag of REASON_TAGS) {
+    const count = bucket.counts[tag] ?? 0;
+    if (count > 0) {
+      segments.push({ name: REASON_LABELS[tag], count });
+      total += count;
+    }
+  }
+  const untaggedCount = bucket.counts.untagged ?? 0;
+  if (untaggedCount > 0) {
+    segments.push({ name: 'Untagged', count: untaggedCount });
+    total += untaggedCount;
+  }
+  if (total === 0) return null;
+
+  const reasonsText = segments
+    .map((s) => (s.count > 1 ? `${s.name} (${s.count})` : s.name))
+    .join(', ');
+  const snackWord = total === 1 ? 'snack' : 'snacks';
+  return `${bucket.label} · ${total} ${snackWord} · ${reasonsText}`;
+}
+
 function useSwipeCarousel(
   paneWidth: number,
   offset: number,
@@ -190,6 +214,15 @@ function useSwipeCarousel(
   return { drag, swipeResponder, animateTo };
 }
 
+const carouselStyles = StyleSheet.create({
+  carouselViewport: {
+    overflow: 'hidden',
+  },
+  carouselTrack: {
+    flexDirection: 'row',
+  },
+});
+
 function ChartCarousel({
   width,
   drag,
@@ -200,6 +233,7 @@ function ChartCarousel({
   barWidth,
   gap,
   showEveryNthLabel,
+  onSelectBar,
 }: {
   width: number;
   drag: Animated.Value;
@@ -210,10 +244,13 @@ function ChartCarousel({
   barWidth: number;
   gap: number;
   showEveryNthLabel?: number;
+  onSelectBar?: (index: number) => void;
 }) {
   return (
-    <View style={[styles.carouselViewport, { width }]} {...panHandlers}>
-      <Animated.View style={[styles.carouselTrack, { transform: [{ translateX: drag }] }]}>
+    <View style={[carouselStyles.carouselViewport, { width }]} {...panHandlers}>
+      <Animated.View
+        style={[carouselStyles.carouselTrack, { transform: [{ translateX: drag }] }]}
+      >
         <View style={{ width }}>
           <StackedBarChart
             buckets={previousBuckets}
@@ -228,6 +265,7 @@ function ChartCarousel({
             barWidth={barWidth}
             gap={gap}
             showEveryNthLabel={showEveryNthLabel}
+            onSelectBar={onSelectBar}
           />
         </View>
         {nextBuckets && (
@@ -246,10 +284,17 @@ function ChartCarousel({
 }
 
 export default function TodayScreen({ navigation }: any) {
+  const colors = useTheme();
+  const styles = getStyles(colors);
   const [viewMode, setViewMode] = useState<ViewMode>('today');
   const [dayOffset, setDayOffset] = useState(0);
   const [weekOffset, setWeekOffset] = useState(0);
   const [allSnacks, setAllSnacks] = useState<Snack[]>([]);
+  const [selectedBarSummary, setSelectedBarSummary] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSelectedBarSummary(null);
+  }, [viewMode, dayOffset, weekOffset]);
 
   const load = useCallback(async () => {
     setAllSnacks(await getAllSnacks());
@@ -356,6 +401,7 @@ export default function TodayScreen({ navigation }: any) {
             barWidth={dayBarWidth}
             gap={dayBarGap}
             showEveryNthLabel={2}
+            onSelectBar={(index) => setSelectedBarSummary(summarizeBucket(currentDayBuckets[index]))}
           />
         ) : (
           <ChartCarousel
@@ -367,8 +413,13 @@ export default function TodayScreen({ navigation }: any) {
             nextBuckets={nextWeekBuckets}
             barWidth={weekBarWidth}
             gap={weekBarGap}
+            onSelectBar={(index) => setSelectedBarSummary(summarizeBucket(currentWeekBuckets[index]))}
           />
         )}
+
+        <Text style={styles.barSummary} numberOfLines={1}>
+          {selectedBarSummary ?? ' '}
+        </Text>
 
         <View style={styles.navRow}>
           <TouchableOpacity
@@ -455,7 +506,8 @@ export default function TodayScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -463,6 +515,12 @@ const styles = StyleSheet.create({
   topSection: {
     paddingHorizontal: 24,
     paddingTop: 60,
+  },
+  barSummary: {
+    marginTop: 10,
+    fontSize: 13,
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
   navRow: {
     flexDirection: 'row',
@@ -498,12 +556,6 @@ const styles = StyleSheet.create({
   backToPresentText: {
     fontSize: 13,
     color: colors.textMuted,
-  },
-  carouselViewport: {
-    overflow: 'hidden',
-  },
-  carouselTrack: {
-    flexDirection: 'row',
   },
   statsRow: {
     flexDirection: 'row',
@@ -572,8 +624,9 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   logMoreText: {
-    color: '#FFFFFF',
+    color: colors.onAccent,
     fontSize: 15,
     fontWeight: '600',
   },
-});
+  });
+}

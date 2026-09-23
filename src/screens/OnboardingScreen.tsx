@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { colors } from '../theme/colors';
+import { ThemeColors, useTheme } from '../theme/colors';
 
 const ONBOARDING_KEY = 'onboarded:v1';
 
@@ -16,6 +16,8 @@ export async function hasOnboarded(): Promise<boolean> {
 }
 
 export default function OnboardingScreen({ navigation }: any) {
+  const colors = useTheme();
+  const styles = getStyles(colors);
   const [step, setStep] = useState(0);
   const isLast = step === SLIDES.length - 1;
 
@@ -51,50 +53,52 @@ export default function OnboardingScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    justifyContent: 'space-between',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  text: {
-    fontSize: 24,
-    fontWeight: '500',
-    color: colors.textPrimary,
-    lineHeight: 32,
-  },
-  footer: {
-    paddingHorizontal: 32,
-    paddingBottom: 48,
-  },
-  dots: {
-    flexDirection: 'row',
-    gap: 6,
-    marginBottom: 24,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.border,
-  },
-  dotActive: {
-    backgroundColor: colors.textPrimary,
-  },
-  button: {
-    backgroundColor: colors.accent,
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
+function getStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+      justifyContent: 'space-between',
+    },
+    content: {
+      flex: 1,
+      justifyContent: 'center',
+      paddingHorizontal: 32,
+    },
+    text: {
+      fontSize: 24,
+      fontWeight: '500',
+      color: colors.textPrimary,
+      lineHeight: 32,
+    },
+    footer: {
+      paddingHorizontal: 32,
+      paddingBottom: 48,
+    },
+    dots: {
+      flexDirection: 'row',
+      gap: 6,
+      marginBottom: 24,
+    },
+    dot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: colors.border,
+    },
+    dotActive: {
+      backgroundColor: colors.textPrimary,
+    },
+    button: {
+      backgroundColor: colors.accent,
+      borderRadius: 14,
+      paddingVertical: 16,
+      alignItems: 'center',
+    },
+    buttonText: {
+      color: colors.onAccent,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+  });
+}

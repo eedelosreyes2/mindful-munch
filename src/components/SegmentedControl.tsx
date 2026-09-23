@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { colors } from '../theme/colors';
+import { ThemeColors, useTheme } from '../theme/colors';
 
 interface Option<T extends string> {
   label: string;
@@ -14,6 +14,9 @@ interface Props<T extends string> {
 }
 
 export default function SegmentedControl<T extends string>({ options, value, onChange }: Props<T>) {
+  const colors = useTheme();
+  const styles = getStyles(colors);
+
   return (
     <View style={styles.container}>
       {options.map((option) => {
@@ -32,30 +35,32 @@ export default function SegmentedControl<T extends string>({ options, value, onC
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 24,
-  },
-  segment: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 9,
-    alignItems: 'center',
-  },
-  segmentActive: {
-    backgroundColor: colors.surface,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.textSecondary,
-  },
-  labelActive: {
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-});
+function getStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: 12,
+      padding: 4,
+      marginBottom: 24,
+    },
+    segment: {
+      flex: 1,
+      paddingVertical: 8,
+      borderRadius: 9,
+      alignItems: 'center',
+    },
+    segmentActive: {
+      backgroundColor: colors.surface,
+    },
+    label: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: colors.textSecondary,
+    },
+    labelActive: {
+      color: colors.textPrimary,
+      fontWeight: '600',
+    },
+  });
+}

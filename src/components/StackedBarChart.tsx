@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Svg, { Rect } from 'react-native-svg';
-import { colors, reasonColors, untaggedColor } from '../theme/colors';
+import { ThemeColors, useTheme } from '../theme/colors';
 import { REASON_TAGS, ReasonTag } from '../types/snack';
 
 export interface Bucket {
@@ -11,7 +11,6 @@ export interface Bucket {
 
 type Segment = ReasonTag | 'untagged';
 const ALL_SEGMENTS: Segment[] = [...REASON_TAGS, 'untagged'];
-const segmentColor: Record<Segment, string> = { ...reasonColors, untagged: untaggedColor };
 
 interface Props {
   buckets: Bucket[];
@@ -19,6 +18,7 @@ interface Props {
   barWidth?: number;
   gap?: number;
   showEveryNthLabel?: number;
+  onSelectBar?: (index: number) => void;
 }
 
 export default function StackedBarChart({
@@ -27,7 +27,15 @@ export default function StackedBarChart({
   barWidth = 14,
   gap = 6,
   showEveryNthLabel = 1,
+  onSelectBar,
 }: Props) {
+  const colors = useTheme();
+  const styles = getStyles(colors);
+  const segmentColor: Record<Segment, string> = {
+    ...colors.reasonColors,
+    untagged: colors.untaggedColor,
+  };
+
   const maxTotal = Math.max(
     1,
     ...buckets.map((b) =>
@@ -42,32 +50,51 @@ export default function StackedBarChart({
 
   return (
     <View>
-      <Svg width={chartWidth} height={height}>
-        {buckets.map((bucket, i) => {
-          let yOffset = height;
-          return (
-            <React.Fragment key={i}>
-              {ALL_SEGMENTS.map((seg) => {
-                const count = bucket.counts[seg] ?? 0;
-                if (count === 0) return null;
-                const segHeight = count * unitHeight;
-                yOffset -= segHeight;
-                return (
-                  <Rect
-                    key={seg}
-                    x={i * (barWidth + gap)}
-                    y={yOffset}
-                    width={barWidth}
-                    height={Math.max(segHeight - 2, 0)} // surface gap between segments
-                    rx={3}
-                    fill={segmentColor[seg]}
-                  />
-                );
-              })}
-            </React.Fragment>
-          );
-        })}
-      </Svg>
+      <View style={{ width: chartWidth, height }}>
+        <Svg width={chartWidth} height={height}>
+          {buckets.map((bucket, i) => {
+            let yOffset = height;
+            return (
+              <React.Fragment key={i}>
+                {ALL_SEGMENTS.map((seg) => {
+                  const count = bucket.counts[seg] ?? 0;
+                  if (count === 0) return null;
+                  const segHeight = count * unitHeight;
+                  yOffset -= segHeight;
+                  return (
+                    <Rect
+                      key={seg}
+                      x={i * (barWidth + gap)}
+                      y={yOffset}
+                      width={barWidth}
+                      height={Math.max(segHeight - 2, 0)} // surface gap between segments
+                      rx={3}
+                      fill={segmentColor[seg]}
+                    />
+                  );
+                })}
+              </React.Fragment>
+            );
+          })}
+        </Svg>
+        {onSelectBar && (
+          <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+            {buckets.map((_, i) => (
+              <Pressable
+                key={i}
+                onPress={() => onSelectBar(i)}
+                style={{
+                  position: 'absolute',
+                  left: i * (barWidth + gap),
+                  top: 0,
+                  width: barWidth + gap,
+                  height,
+                }}
+              />
+            ))}
+          </View>
+        )}
+      </View>
       <View style={[styles.labelRow, { width: chartWidth }]}>
         {buckets.map((bucket, i) => (
           <Text
@@ -86,17 +113,19 @@ export default function StackedBarChart({
   );
 }
 
-const styles = StyleSheet.create({
-  labelRow: {
-    flexDirection: 'row',
-    marginTop: 6,
-  },
-  label: {
-    fontSize: 9,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
-  labelHidden: {
-    opacity: 0,
-  },
-});
+function getStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    labelRow: {
+      flexDirection: 'row',
+      marginTop: 6,
+    },
+    label: {
+      fontSize: 9,
+      color: colors.textMuted,
+      textAlign: 'center',
+    },
+    labelHidden: {
+      opacity: 0,
+    },
+  });
+}

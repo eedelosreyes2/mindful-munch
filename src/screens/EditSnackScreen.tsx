@@ -10,12 +10,14 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { colors } from '../theme/colors';
+import { ThemeColors, useTheme } from '../theme/colors';
 import { Snack } from '../types/snack';
 import { updateSnack, deleteSnack } from '../storage/snackStorage';
 import SnackForm, { SnackFormValues } from '../components/SnackForm';
 
 export default function EditSnackScreen({ navigation, route }: any) {
+  const colors = useTheme();
+  const styles = getStyles(colors);
   const snack: Snack = route.params.snack;
 
   const handleSave = async (values: SnackFormValues) => {
@@ -68,33 +70,35 @@ export default function EditSnackScreen({ navigation, route }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 80,
-  },
-  heading: {
-    fontSize: 26,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: 20,
-  },
-  linkText: {
-    color: colors.textSecondary,
-    fontSize: 15,
-    textAlign: 'center',
-  },
-  deleteLink: {
-    marginTop: 20,
-  },
-  deleteLinkText: {
-    color: colors.danger,
-    fontSize: 15,
-    textAlign: 'center',
-  },
-});
+function getStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    content: {
+      flex: 1,
+      paddingHorizontal: 24,
+      paddingTop: 80,
+    },
+    heading: {
+      fontSize: 26,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      marginBottom: 20,
+    },
+    linkText: {
+      color: colors.textSecondary,
+      fontSize: 15,
+      textAlign: 'center',
+    },
+    deleteLink: {
+      marginTop: 20,
+    },
+    deleteLinkText: {
+      color: colors.danger,
+      fontSize: 15,
+      textAlign: 'center',
+    },
+  });
+}

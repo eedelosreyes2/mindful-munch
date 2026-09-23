@@ -1,7 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform, Keyboard } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Platform,
+  Keyboard,
+  useColorScheme,
+} from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { colors, reasonColors, reasonColorsMuted } from '../theme/colors';
+import { ThemeColors, useTheme } from '../theme/colors';
 import { REASON_TAGS, REASON_LABELS, ReasonTag } from '../types/snack';
 
 function formatWhen(date: Date): string {
@@ -33,6 +42,7 @@ interface Props {
   onSubmit: (values: SnackFormValues) => void | Promise<void>;
   resetAfterSubmit?: boolean;
   autoFocus?: boolean;
+  quickSelectOptions?: string[];
 }
 
 export default function SnackForm({
@@ -44,7 +54,12 @@ export default function SnackForm({
   onSubmit,
   resetAfterSubmit = false,
   autoFocus = false,
+  quickSelectOptions = [],
 }: Props) {
+  const colors = useTheme();
+  const styles = getStyles(colors);
+  const isDark = useColorScheme() === 'dark';
+
   const [text, setText] = useState(initialText);
   const [selectedReason, setSelectedReason] = useState<ReasonTag | undefined>(initialReason);
   const [loggedAt, setLoggedAt] = useState(() => new Date(initialTimestamp ?? Date.now()));
@@ -96,6 +111,23 @@ export default function SnackForm({
 
   return (
     <View>
+      {quickSelectOptions.length > 0 && (
+        <>
+          <Text style={styles.subheading}>Recent</Text>
+          <View style={styles.quickSelectRow}>
+            {quickSelectOptions.map((option) => (
+              <TouchableOpacity
+                key={option}
+                style={styles.quickSelectChip}
+                onPress={() => setText(option)}
+              >
+                <Text style={styles.quickSelectText}>{option}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </>
+      )}
+
       <TextInput
         style={styles.input}
         placeholder="Cookie, chips, leftovers…"
@@ -117,11 +149,15 @@ export default function SnackForm({
               onPress={() => setSelectedReason(isSelected ? undefined : tag)}
               style={[
                 styles.tagChip,
-                { backgroundColor: isSelected ? reasonColors[tag] : reasonColorsMuted[tag] },
+                {
+                  backgroundColor: isSelected
+                    ? colors.reasonColors[tag]
+                    : colors.reasonColorsMuted[tag],
+                },
               ]}
             >
               <Text
-                style={[styles.tagText, { color: isSelected ? '#FFFFFF' : colors.textSecondary }]}
+                style={[styles.tagText, { color: isSelected ? colors.onAccent : colors.textSecondary }]}
               >
                 {REASON_LABELS[tag]}
               </Text>
@@ -148,6 +184,7 @@ export default function SnackForm({
             value={loggedAt}
             mode={activePicker}
             display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            themeVariant={isDark ? 'dark' : 'light'}
             maximumDate={new Date()}
             onChange={handlePickerChange}
           />
@@ -170,85 +207,103 @@ export default function SnackForm({
   );
 }
 
-const styles = StyleSheet.create({
-  input: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    fontSize: 17,
-    color: colors.textPrimary,
-    marginBottom: 32,
-  },
-  subheading: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 12,
-  },
-  tagRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 28,
-  },
-  tagChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  tagText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  whenRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    marginBottom: 24,
-  },
-  whenChip: {
-    backgroundColor: colors.surfaceMuted,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  whenChipText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.textPrimary,
-  },
-  whenResetText: {
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  pickerContainer: {
-    marginBottom: 16,
-    alignItems: 'flex-end',
-  },
-  pickerDoneButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-  },
-  pickerDoneText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  submitButton: {
-    backgroundColor: colors.accent,
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  submitButtonDisabled: {
-    opacity: 0.35,
-  },
-  submitButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
+function getStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    quickSelectRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+      marginBottom: 16,
+    },
+    quickSelectChip: {
+      backgroundColor: colors.surfaceMuted,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 16,
+    },
+    quickSelectText: {
+      fontSize: 13,
+      color: colors.textPrimary,
+    },
+    input: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 14,
+      paddingHorizontal: 18,
+      paddingVertical: 16,
+      fontSize: 17,
+      color: colors.textPrimary,
+      marginBottom: 32,
+    },
+    subheading: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginBottom: 12,
+    },
+    tagRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+      marginBottom: 28,
+    },
+    tagChip: {
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 20,
+    },
+    tagText: {
+      fontSize: 14,
+      fontWeight: '500',
+    },
+    whenRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 14,
+      marginBottom: 24,
+    },
+    whenChip: {
+      backgroundColor: colors.surfaceMuted,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 20,
+    },
+    whenChipText: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: colors.textPrimary,
+    },
+    whenResetText: {
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    pickerContainer: {
+      marginBottom: 16,
+      alignItems: 'flex-end',
+    },
+    pickerDoneButton: {
+      paddingHorizontal: 16,
+      paddingVertical: 6,
+    },
+    pickerDoneText: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    submitButton: {
+      backgroundColor: colors.accent,
+      borderRadius: 14,
+      paddingVertical: 16,
+      alignItems: 'center',
+      marginBottom: 24,
+    },
+    submitButtonDisabled: {
+      opacity: 0.35,
+    },
+    submitButtonText: {
+      color: colors.onAccent,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+  });
+}
