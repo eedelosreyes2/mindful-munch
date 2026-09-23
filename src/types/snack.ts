@@ -1,4 +1,4 @@
-export type ReasonTag = 'hungry' | 'bored' | 'stressed' | 'tired' | 'social';
+export type ReasonTag = 'bored' | 'habit' | 'hungry' | 'social' | 'stressed' | 'tired';
 
 export interface Snack {
   id: string;
@@ -7,12 +7,13 @@ export interface Snack {
   reason?: ReasonTag;
 }
 
-export const REASON_TAGS: ReasonTag[] = ['hungry', 'bored', 'stressed', 'tired', 'social'];
+export const REASON_TAGS: ReasonTag[] = ['bored', 'habit', 'hungry', 'social', 'stressed', 'tired'];
 
 export const REASON_LABELS: Record<ReasonTag, string> = {
-  hungry: 'Hungry',
   bored: 'Bored',
+  habit: 'Habit',
+  hungry: 'Hungry',
+  social: 'Social',
   stressed: 'Stressed',
   tired: 'Tired',
-  social: 'Social',
 };

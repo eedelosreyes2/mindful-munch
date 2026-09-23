@@ -109,7 +109,7 @@ function formatWeekRange(weekStart: Date, weekOffset: number): string {
 function formatDayLabel(date: Date, dayOffset: number): string {
   if (dayOffset === 0) return 'Today';
   if (dayOffset === 1) return 'Yesterday';
-  return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  return date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 function summarizeBucket(bucket: Bucket): string | null {

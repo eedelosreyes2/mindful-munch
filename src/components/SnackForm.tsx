@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Platform,
   Keyboard,
+  Modal,
   useColorScheme,
 } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
@@ -66,6 +67,7 @@ export default function SnackForm({
   const [loggedAt, setLoggedAt] = useState(() => new Date(initialTimestamp ?? Date.now()));
   const [isCustomTime, setIsCustomTime] = useState(startWithCustomTime);
   const [activePicker, setActivePicker] = useState<'date' | 'time' | 'datetime' | null>(null);
+  const [showReasonPrompt, setShowReasonPrompt] = useState(false);
 
   const openTimePicker = () => {
     setActivePicker(Platform.OS === 'android' ? 'date' : 'datetime');
@@ -94,9 +96,7 @@ export default function SnackForm({
     setIsCustomTime(false);
   };
 
-  const handleSubmit = async () => {
-    if (!text.trim()) return;
-
+  const submit = async () => {
     await onSubmit({
       text: text.trim(),
       reason: selectedReason,
@@ -108,6 +108,22 @@ export default function SnackForm({
       setSelectedReason(undefined);
       resetToNow();
     }
+  };
+
+  const handleSubmit = () => {
+    if (!text.trim()) return;
+
+    if (!selectedReason) {
+      setShowReasonPrompt(true);
+      return;
+    }
+
+    submit();
+  };
+
+  const handleLogAnyway = () => {
+    setShowReasonPrompt(false);
+    submit();
   };
 
   return (
@@ -211,6 +227,28 @@ export default function SnackForm({
       >
         <Text style={styles.submitButtonText}>{submitLabel}</Text>
       </TouchableOpacity>
+
+      <Modal
+        visible={showReasonPrompt}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowReasonPrompt(false)}
+      >
+        <View style={styles.promptBackdrop}>
+          <View style={styles.promptCard}>
+            <Text style={styles.promptTitle}>Log without a reason?</Text>
+            <TouchableOpacity
+              style={styles.promptPrimaryButton}
+              onPress={() => setShowReasonPrompt(false)}
+            >
+              <Text style={styles.promptPrimaryButtonText}>Add a reason</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.promptSecondaryButton} onPress={handleLogAnyway}>
+              <Text style={styles.promptSecondaryText}>Log anyway</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -323,6 +361,46 @@ function getStyles(colors: ThemeColors) {
       color: colors.onAccent,
       fontSize: 16,
       fontWeight: '600',
+    },
+    promptBackdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.4)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 40,
+    },
+    promptCard: {
+      width: '100%',
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 24,
+      alignItems: 'stretch',
+    },
+    promptTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      textAlign: 'center',
+      marginBottom: 20,
+    },
+    promptPrimaryButton: {
+      backgroundColor: colors.accent,
+      borderRadius: 14,
+      paddingVertical: 14,
+      alignItems: 'center',
+      marginBottom: 14,
+    },
+    promptPrimaryButtonText: {
+      color: colors.onAccent,
+      fontSize: 15,
+      fontWeight: '600',
+    },
+    promptSecondaryButton: {
+      alignItems: 'center',
+    },
+    promptSecondaryText: {
+      color: colors.textSecondary,
+      fontSize: 14,
     },
   });
 }

@@ -36,6 +36,7 @@ export const lightColors: ThemeColors = {
     stressed: '#7B93AB',
     tired: '#9B7E96',
     social: '#C9A24B',
+    habit: '#6B9A8F',
   },
   reasonColorsMuted: {
     hungry: '#E4E9DF',
@@ -43,6 +44,7 @@ export const lightColors: ThemeColors = {
     stressed: '#DFE5EC',
     tired: '#E9DFE7',
     social: '#F3E9D3',
+    habit: '#E1EDE9',
   },
   untaggedColor: '#C7C2B4',
 };
@@ -64,6 +66,7 @@ export const darkColors: ThemeColors = {
     stressed: '#8FA8C2',
     tired: '#B192AC',
     social: '#DCB768',
+    habit: '#8FBDB0',
   },
   reasonColorsMuted: {
     hungry: '#333B2E',
@@ -71,6 +74,7 @@ export const darkColors: ThemeColors = {
     stressed: '#2C333B',
     tired: '#372E35',
     social: '#3B331F',
+    habit: '#293B37',
   },
   untaggedColor: '#5C574B',
 };
