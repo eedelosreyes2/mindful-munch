@@ -46,6 +46,7 @@ interface Props {
   resetAfterSubmit?: boolean;
   autoFocus?: boolean;
   quickSelectOptions?: string[];
+  onRemoveQuickSelectOption?: (text: string) => void;
   onPickerVisibilityChange?: (visible: boolean) => void;
 }
 
@@ -59,6 +60,7 @@ export default function SnackForm({
   resetAfterSubmit = false,
   autoFocus = false,
   quickSelectOptions = [],
+  onRemoveQuickSelectOption,
   onPickerVisibilityChange,
 }: Props) {
   const colors = useTheme();
@@ -111,6 +113,8 @@ export default function SnackForm({
       timestamp: loggedAt.getTime(),
     });
 
+    setActivePicker(null);
+
     if (resetAfterSubmit) {
       setText('');
       setSelectedReason(undefined);
@@ -147,16 +151,25 @@ export default function SnackForm({
           <Text style={styles.subheading}>Recent</Text>
           <View style={styles.quickSelectRow}>
             {quickSelectOptions.map((option) => (
-              <TouchableOpacity
-                key={option}
-                style={styles.quickSelectChip}
-                onPress={() => {
-                  Keyboard.dismiss();
-                  setText(option);
-                }}
-              >
-                <Text style={styles.quickSelectText}>{option}</Text>
-              </TouchableOpacity>
+              <View key={option} style={styles.quickSelectChip}>
+                <TouchableOpacity
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    setText(option);
+                  }}
+                >
+                  <Text style={styles.quickSelectText}>{option}</Text>
+                </TouchableOpacity>
+                {onRemoveQuickSelectOption && (
+                  <TouchableOpacity
+                    style={styles.quickSelectRemove}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    onPress={() => onRemoveQuickSelectOption(option)}
+                  >
+                    <Feather name="x" size={12} color={colors.textMuted} />
+                  </TouchableOpacity>
+                )}
+              </View>
             ))}
           </View>
         </>
@@ -283,10 +296,16 @@ function getStyles(colors: ThemeColors) {
       marginBottom: 16,
     },
     quickSelectChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
       backgroundColor: colors.surfaceMuted,
-      paddingHorizontal: 14,
+      paddingLeft: 14,
+      paddingRight: 10,
       paddingVertical: 8,
       borderRadius: 16,
+    },
+    quickSelectRemove: {
+      marginLeft: 6,
     },
     quickSelectText: {
       fontSize: 13,

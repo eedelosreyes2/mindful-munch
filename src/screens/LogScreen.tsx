@@ -7,6 +7,7 @@ import {
   Keyboard,
   StyleSheet,
   KeyboardAvoidingView,
+  ScrollView,
   Platform,
   Animated,
 } from 'react-native';
@@ -14,7 +15,13 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { ThemeColors, useTheme } from '../theme/colors';
-import { addSnack, getAllSnacks, getFrequentSnackTexts } from '../storage/snackStorage';
+import {
+  addSnack,
+  getAllSnacks,
+  getFrequentSnackTexts,
+  getHiddenQuickSelectTexts,
+  hideQuickSelectText,
+} from '../storage/snackStorage';
 import SnackForm, { SnackFormValues } from '../components/SnackForm';
 
 export default function LogScreen({ navigation }: any) {
@@ -26,10 +33,21 @@ export default function LogScreen({ navigation }: any) {
   const [quickSelectOptions, setQuickSelectOptions] = useState<string[]>([]);
 
   const loadQuickSelectOptions = useCallback(() => {
-    getAllSnacks().then((all) => setQuickSelectOptions(getFrequentSnackTexts(all)));
+    Promise.all([getAllSnacks(), getHiddenQuickSelectTexts()]).then(([all, hidden]) => {
+      const hiddenSet = new Set(hidden);
+      const options = getFrequentSnackTexts(all, 12)
+        .filter((text) => !hiddenSet.has(text.trim().toLowerCase()))
+        .slice(0, 5);
+      setQuickSelectOptions(options);
+    });
   }, []);
 
   useFocusEffect(loadQuickSelectOptions);
+
+  const handleRemoveQuickSelectOption = async (text: string) => {
+    await hideQuickSelectText(text);
+    loadQuickSelectOptions();
+  };
 
   const handleLog = async (values: SnackFormValues) => {
     await addSnack(values);
@@ -50,30 +68,37 @@ export default function LogScreen({ navigation }: any) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <View style={styles.content}>
-          <View style={styles.headerRow}>
-            <Text style={styles.heading}>Log a snack</Text>
-            <TouchableOpacity
-              style={styles.settingsButton}
-              onPress={() => navigation.navigate('Settings')}
-            >
-              <Feather name="settings" size={18} color={colors.textPrimary} />
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <View>
+            <View style={styles.headerRow}>
+              <Text style={styles.heading}>Log a snack</Text>
+              <TouchableOpacity
+                style={styles.settingsButton}
+                onPress={() => navigation.navigate('Settings')}
+              >
+                <Feather name="settings" size={18} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <SnackForm
+              submitLabel="Log it"
+              onSubmit={handleLog}
+              resetAfterSubmit
+              quickSelectOptions={quickSelectOptions}
+              onRemoveQuickSelectOption={handleRemoveQuickSelectOption}
+            />
+
+            <TouchableOpacity onPress={() => navigation.navigate('Today')}>
+              <Text style={styles.linkText}>View log →</Text>
             </TouchableOpacity>
           </View>
-
-          <SnackForm
-            submitLabel="Log it"
-            onSubmit={handleLog}
-            resetAfterSubmit
-            quickSelectOptions={quickSelectOptions}
-          />
-
-          <TouchableOpacity onPress={() => navigation.navigate('Today')}>
-            <Text style={styles.linkText}>View log →</Text>
-          </TouchableOpacity>
-        </View>
-      </TouchableWithoutFeedback>
+        </TouchableWithoutFeedback>
+      </ScrollView>
 
       {showConfirm && (
         <Animated.View
@@ -107,10 +132,13 @@ function getStyles(colors: ThemeColors) {
       flex: 1,
       backgroundColor: colors.background,
     },
-    content: {
+    scrollView: {
       flex: 1,
+    },
+    content: {
       paddingHorizontal: 24,
       paddingTop: 80,
+      paddingBottom: 24,
     },
     headerRow: {
       flexDirection: 'row',

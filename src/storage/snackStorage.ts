@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Snack } from '../types/snack';
 
 const STORAGE_KEY = 'snacks:v1';
+const HIDDEN_QUICK_SELECT_KEY = 'hiddenQuickSelect:v1';
 
 export async function getAllSnacks(): Promise<Snack[]> {
   try {
@@ -36,6 +37,23 @@ export async function deleteSnack(id: string): Promise<void> {
   const existing = await getAllSnacks();
   const updated = existing.filter((s) => s.id !== id);
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+}
+
+export async function getHiddenQuickSelectTexts(): Promise<string[]> {
+  try {
+    const raw = await AsyncStorage.getItem(HIDDEN_QUICK_SELECT_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (err) {
+    console.error('Failed to load hidden quick-select texts', err);
+    return [];
+  }
+}
+
+export async function hideQuickSelectText(text: string): Promise<void> {
+  const key = text.trim().toLowerCase();
+  const existing = await getHiddenQuickSelectTexts();
+  if (existing.includes(key)) return;
+  await AsyncStorage.setItem(HIDDEN_QUICK_SELECT_KEY, JSON.stringify([...existing, key]));
 }
 
 export function getFrequentSnackTexts(snacks: Snack[], limit = 5): string[] {
