@@ -10,6 +10,7 @@ import {
   useColorScheme,
 } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { Feather } from '@expo/vector-icons';
 import { ThemeColors, useTheme } from '../theme/colors';
 import { REASON_TAGS, REASON_LABELS, ReasonTag } from '../types/snack';
 
@@ -128,16 +129,23 @@ export default function SnackForm({
         </>
       )}
 
-      <TextInput
-        style={styles.input}
-        placeholder="Cookie, chips, leftovers…"
-        placeholderTextColor={colors.textMuted}
-        value={text}
-        onChangeText={setText}
-        returnKeyType="done"
-        onSubmitEditing={Keyboard.dismiss}
-        autoFocus={autoFocus}
-      />
+      <View style={styles.inputWrapper}>
+        <TextInput
+          style={styles.input}
+          placeholder="Cookie, chips, leftovers…"
+          placeholderTextColor={colors.textMuted}
+          value={text}
+          onChangeText={setText}
+          returnKeyType="done"
+          onSubmitEditing={Keyboard.dismiss}
+          autoFocus={autoFocus}
+        />
+        {text.length > 0 && (
+          <TouchableOpacity style={styles.clearButton} onPress={() => setText('')}>
+            <Feather name="x" size={16} color={colors.textMuted} />
+          </TouchableOpacity>
+        )}
+      </View>
 
       <Text style={styles.subheading}>Why? (optional)</Text>
       <View style={styles.tagRow}>
@@ -225,16 +233,27 @@ function getStyles(colors: ThemeColors) {
       fontSize: 13,
       color: colors.textPrimary,
     },
+    inputWrapper: {
+      position: 'relative',
+      marginBottom: 32,
+    },
     input: {
       backgroundColor: colors.surface,
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 14,
-      paddingHorizontal: 18,
+      paddingLeft: 18,
+      paddingRight: 44,
       paddingVertical: 16,
       fontSize: 17,
       color: colors.textPrimary,
-      marginBottom: 32,
+    },
+    clearButton: {
+      position: 'absolute',
+      right: 18,
+      top: 0,
+      bottom: 0,
+      justifyContent: 'center',
     },
     subheading: {
       fontSize: 14,

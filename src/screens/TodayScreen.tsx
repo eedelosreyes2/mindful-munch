@@ -10,7 +10,6 @@ import {
   Animated,
   Easing,
   Dimensions,
-  Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { ThemeColors, useTheme } from '../theme/colors';
@@ -21,7 +20,6 @@ import {
   getSnacksForWeek,
   getCurrentWeekStart,
 } from '../storage/snackStorage';
-import { exportSnacks } from '../storage/exportSnacks';
 import StackedBarChart, { Bucket } from '../components/StackedBarChart';
 import ReasonLegend from '../components/ReasonLegend';
 import SegmentedControl from '../components/SegmentedControl';
@@ -294,14 +292,6 @@ export default function TodayScreen({ navigation, route }: any) {
   const [allSnacks, setAllSnacks] = useState<Snack[]>([]);
   const [selectedBarSummary, setSelectedBarSummary] = useState<string | null>(null);
 
-  const handleExport = async () => {
-    try {
-      await exportSnacks();
-    } catch (err) {
-      Alert.alert("Couldn't export", 'Something went wrong while preparing your data.');
-    }
-  };
-
   useEffect(() => {
     setSelectedBarSummary(null);
   }, [viewMode, dayOffset, weekOffset]);
@@ -512,10 +502,6 @@ export default function TodayScreen({ navigation, route }: any) {
       <TouchableOpacity style={styles.logMoreButton} onPress={() => navigation.goBack()}>
         <Text style={styles.logMoreText}>+ Log a snack</Text>
       </TouchableOpacity>
-
-      <TouchableOpacity style={styles.exportLink} onPress={handleExport}>
-        <Text style={styles.exportLinkText}>Export data</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -528,7 +514,7 @@ function getStyles(colors: ThemeColors) {
   },
   topSection: {
     paddingHorizontal: 24,
-    paddingTop: 52,
+    paddingTop: 60,
   },
   barSummary: {
     marginTop: 6,
@@ -647,15 +633,7 @@ function getStyles(colors: ThemeColors) {
     alignItems: 'center',
     backgroundColor: colors.accent,
     borderRadius: 14,
-    marginBottom: 16,
-  },
-  exportLink: {
-    alignItems: 'center',
     marginBottom: 40,
-  },
-  exportLinkText: {
-    fontSize: 13,
-    color: colors.textMuted,
   },
   logMoreText: {
     color: colors.onAccent,

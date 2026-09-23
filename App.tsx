@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, ActivityIndicator, useColorScheme } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import {
   NavigationContainer,
@@ -14,7 +14,8 @@ import OnboardingScreen, { hasOnboarded } from './src/screens/OnboardingScreen';
 import LogScreen from './src/screens/LogScreen';
 import TodayScreen from './src/screens/TodayScreen';
 import EditSnackScreen from './src/screens/EditSnackScreen';
-import { useTheme } from './src/theme/colors';
+import SettingsScreen from './src/screens/SettingsScreen';
+import { ThemeProvider, useTheme, useThemeSettings } from './src/theme/colors';
 import { Snack } from './src/types/snack';
 import {
   scheduleWeeklyInsightNotification,
@@ -26,14 +27,23 @@ export type RootStackParamList = {
   Log: undefined;
   Today: { initialViewMode?: 'today' | 'week' } | undefined;
   EditSnack: { snack: Snack };
+  Settings: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 export default function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
+  );
+}
+
+function AppContent() {
   const colors = useTheme();
-  const isDark = useColorScheme() === 'dark';
+  const { isDark } = useThemeSettings();
   const [initialRoute, setInitialRoute] = useState<'Onboarding' | 'Log' | null>(null);
   const lastNotificationResponse = Notifications.useLastNotificationResponse();
   const handledResponseRef = useRef<typeof lastNotificationResponse>(null);
@@ -91,6 +101,7 @@ export default function App() {
           <Stack.Screen name="Log" component={LogScreen} />
           <Stack.Screen name="Today" component={TodayScreen} />
           <Stack.Screen name="EditSnack" component={EditSnackScreen} />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
         </Stack.Navigator>
       </NavigationContainer>
       <StatusBar style="auto" />

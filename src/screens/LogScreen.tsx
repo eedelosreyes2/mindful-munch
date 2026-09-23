@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
 import { ThemeColors, useTheme } from '../theme/colors';
 import { addSnack, getAllSnacks, getFrequentSnackTexts } from '../storage/snackStorage';
 import SnackForm, { SnackFormValues } from '../components/SnackForm';
@@ -51,7 +52,15 @@ export default function LogScreen({ navigation }: any) {
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <View style={styles.content}>
-          <Text style={styles.heading}>Log a snack</Text>
+          <View style={styles.headerRow}>
+            <Text style={styles.heading}>Log a snack</Text>
+            <TouchableOpacity
+              style={styles.settingsButton}
+              onPress={() => navigation.navigate('Settings')}
+            >
+              <Feather name="settings" size={18} color={colors.textPrimary} />
+            </TouchableOpacity>
+          </View>
 
           <SnackForm
             submitLabel="Log it"
@@ -101,13 +110,26 @@ function getStyles(colors: ThemeColors) {
     content: {
       flex: 1,
       paddingHorizontal: 24,
-      paddingTop: 104,
+      paddingTop: 80,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 20,
     },
     heading: {
       fontSize: 26,
       fontWeight: '600',
       color: colors.textPrimary,
-      marginBottom: 20,
+    },
+    settingsButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.surfaceMuted,
     },
     linkText: {
       color: colors.textSecondary,
