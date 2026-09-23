@@ -40,33 +40,37 @@ export default function EditSnackScreen({ navigation, route }: any) {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <View style={styles.content}>
-          <Text style={styles.heading}>Edit snack</Text>
+    <View style={styles.container}>
+      <KeyboardAvoidingView
+        style={styles.content}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <View>
+            <Text style={styles.heading}>Edit snack</Text>
 
-          <SnackForm
-            initialText={snack.text}
-            initialReason={snack.reason}
-            initialTimestamp={snack.timestamp}
-            startWithCustomTime
-            submitLabel="Save changes"
-            onSubmit={handleSave}
-          />
+            <SnackForm
+              initialText={snack.text}
+              initialReason={snack.reason}
+              initialTimestamp={snack.timestamp}
+              startWithCustomTime
+              submitLabel="Save changes"
+              onSubmit={handleSave}
+            />
 
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.linkText}>Cancel</Text>
-          </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Text style={styles.linkText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
 
-          <TouchableOpacity style={styles.deleteLink} onPress={handleDelete}>
-            <Text style={styles.deleteLinkText}>Delete this entry</Text>
-          </TouchableOpacity>
-        </View>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+      <View style={styles.footer}>
+        <TouchableOpacity onPress={handleDelete}>
+          <Text style={styles.deleteLinkText}>Delete this entry</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 
@@ -75,6 +79,7 @@ function getStyles(colors: ThemeColors) {
     container: {
       flex: 1,
       backgroundColor: colors.background,
+      justifyContent: 'space-between',
     },
     content: {
       flex: 1,
@@ -87,13 +92,14 @@ function getStyles(colors: ThemeColors) {
       color: colors.textPrimary,
       marginBottom: 20,
     },
+    footer: {
+      paddingHorizontal: 24,
+      paddingBottom: 40,
+    },
     linkText: {
       color: colors.textSecondary,
       fontSize: 15,
       textAlign: 'center',
-    },
-    deleteLink: {
-      marginTop: 20,
     },
     deleteLinkText: {
       color: colors.danger,

@@ -23,7 +23,7 @@ import {
 } from './src/notifications/weeklyInsight';
 
 export type RootStackParamList = {
-  Onboarding: undefined;
+  Onboarding: { viewOnly?: boolean } | undefined;
   Log: undefined;
   Today: { initialViewMode?: 'today' | 'week' } | undefined;
   EditSnack: { snack: Snack };

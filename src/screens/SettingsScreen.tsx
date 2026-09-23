@@ -37,6 +37,14 @@ export default function SettingsScreen({ navigation }: any) {
         <TouchableOpacity style={styles.row} onPress={handleExport}>
           <Text style={styles.rowText}>Export data</Text>
         </TouchableOpacity>
+
+        <Text style={styles.sectionLabel}>About</Text>
+        <TouchableOpacity
+          style={styles.row}
+          onPress={() => navigation.navigate('Onboarding', { viewOnly: true })}
+        >
+          <Text style={styles.rowText}>View onboarding</Text>
+        </TouchableOpacity>
       </View>
 
       <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -75,6 +83,7 @@ function getStyles(colors: ThemeColors) {
       borderRadius: 14,
       paddingHorizontal: 18,
       paddingVertical: 16,
+      marginBottom: 28,
     },
     rowText: {
       fontSize: 16,

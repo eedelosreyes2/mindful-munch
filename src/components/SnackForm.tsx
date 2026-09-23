@@ -4,6 +4,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   StyleSheet,
   Platform,
   Keyboard,
@@ -70,6 +71,7 @@ export default function SnackForm({
   const [showReasonPrompt, setShowReasonPrompt] = useState(false);
 
   const openTimePicker = () => {
+    Keyboard.dismiss();
     setActivePicker(Platform.OS === 'android' ? 'date' : 'datetime');
   };
 
@@ -126,7 +128,13 @@ export default function SnackForm({
     submit();
   };
 
+  const dismissPicker = () => {
+    Keyboard.dismiss();
+    if (activePicker) setActivePicker(null);
+  };
+
   return (
+    <TouchableWithoutFeedback onPress={dismissPicker} accessible={false}>
     <View>
       {quickSelectOptions.length > 0 && (
         <>
@@ -170,7 +178,10 @@ export default function SnackForm({
           return (
             <TouchableOpacity
               key={tag}
-              onPress={() => setSelectedReason(isSelected ? undefined : tag)}
+              onPress={() => {
+                Keyboard.dismiss();
+                setSelectedReason(isSelected ? undefined : tag);
+              }}
               style={[
                 styles.tagChip,
                 {
@@ -250,6 +261,7 @@ export default function SnackForm({
         </View>
       </Modal>
     </View>
+    </TouchableWithoutFeedback>
   );
 }
 
