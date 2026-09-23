@@ -283,10 +283,10 @@ function ChartCarousel({
   );
 }
 
-export default function TodayScreen({ navigation }: any) {
+export default function TodayScreen({ navigation, route }: any) {
   const colors = useTheme();
   const styles = getStyles(colors);
-  const [viewMode, setViewMode] = useState<ViewMode>('today');
+  const [viewMode, setViewMode] = useState<ViewMode>(route?.params?.initialViewMode ?? 'today');
   const [dayOffset, setDayOffset] = useState(0);
   const [weekOffset, setWeekOffset] = useState(0);
   const [allSnacks, setAllSnacks] = useState<Snack[]>([]);
