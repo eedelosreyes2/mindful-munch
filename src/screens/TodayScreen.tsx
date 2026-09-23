@@ -528,10 +528,10 @@ function getStyles(colors: ThemeColors) {
   },
   topSection: {
     paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingTop: 52,
   },
   barSummary: {
-    marginTop: 10,
+    marginTop: 6,
     fontSize: 13,
     color: colors.textSecondary,
     textAlign: 'center',
@@ -541,16 +541,23 @@ function getStyles(colors: ThemeColors) {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 20,
-    marginTop: 16,
+    marginTop: 10,
   },
   navButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceMuted,
   },
   navArrow: {
-    fontSize: 18,
+    fontSize: 20,
+    lineHeight: 20,
     fontWeight: '600',
     color: colors.textPrimary,
+    textAlign: 'center',
+    includeFontPadding: false,
   },
   navArrowDisabled: {
     color: colors.textMuted,
@@ -565,16 +572,21 @@ function getStyles(colors: ThemeColors) {
   },
   backToPresent: {
     marginTop: 10,
-    alignItems: 'center',
+    alignSelf: 'center',
+    backgroundColor: colors.surfaceMuted,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
   },
   backToPresentText: {
     fontSize: 13,
-    color: colors.textMuted,
+    fontWeight: '500',
+    color: colors.textPrimary,
   },
   statsRow: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 24,
+    marginBottom: 18,
   },
   statCard: {
     flex: 1,
@@ -595,7 +607,7 @@ function getStyles(colors: ThemeColors) {
   listSection: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 28,
+    paddingTop: 20,
   },
   listScroll: {
     flex: 1,
