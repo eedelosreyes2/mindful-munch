@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -46,6 +46,7 @@ interface Props {
   resetAfterSubmit?: boolean;
   autoFocus?: boolean;
   quickSelectOptions?: string[];
+  onPickerVisibilityChange?: (visible: boolean) => void;
 }
 
 export default function SnackForm({
@@ -58,6 +59,7 @@ export default function SnackForm({
   resetAfterSubmit = false,
   autoFocus = false,
   quickSelectOptions = [],
+  onPickerVisibilityChange,
 }: Props) {
   const colors = useTheme();
   const styles = getStyles(colors);
@@ -69,6 +71,10 @@ export default function SnackForm({
   const [isCustomTime, setIsCustomTime] = useState(startWithCustomTime);
   const [activePicker, setActivePicker] = useState<'date' | 'time' | 'datetime' | null>(null);
   const [showReasonPrompt, setShowReasonPrompt] = useState(false);
+
+  useEffect(() => {
+    onPickerVisibilityChange?.(activePicker !== null);
+  }, [activePicker]);
 
   const openTimePicker = () => {
     Keyboard.dismiss();
@@ -144,7 +150,10 @@ export default function SnackForm({
               <TouchableOpacity
                 key={option}
                 style={styles.quickSelectChip}
-                onPress={() => setText(option)}
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setText(option);
+                }}
               >
                 <Text style={styles.quickSelectText}>{option}</Text>
               </TouchableOpacity>
