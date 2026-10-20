@@ -88,7 +88,7 @@ function AppContent() {
       navigationRef.isReady()
     ) {
       handledResponseRef.current = lastNotificationResponse;
-      navigationRef.navigate('Today', { initialViewMode: 'week' });
+      navigationRef.navigate('Today', { initialViewMode: 'week', initialWeekOffset: 1 });
     }
   };
 

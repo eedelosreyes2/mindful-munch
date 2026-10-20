@@ -63,7 +63,9 @@ export async function scheduleWeeklyInsightNotification(): Promise<void> {
     }
 
     const allSnacks = await getAllSnacks();
-    const weekStart = getCurrentWeekStart();
+    const fireAt = nextSundayAt6pm();
+    const weekStart = getCurrentWeekStart(fireAt);
+    weekStart.setDate(weekStart.getDate() - 7);
     const weekSnacks = getSnacksForWeek(allSnacks, weekStart);
 
     const rotationRaw = await AsyncStorage.getItem(ROTATION_KEY);
@@ -86,7 +88,7 @@ export async function scheduleWeeklyInsightNotification(): Promise<void> {
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: nextSundayAt6pm(),
+        date: fireAt,
       },
     });
 
