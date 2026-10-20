@@ -516,7 +516,7 @@ export default function TodayScreen({ navigation, route }: any) {
                 <TouchableOpacity
                   key={s.id}
                   style={styles.listItem}
-                  onPress={() => navigation.navigate('EditSnack', { snack: s })}
+                  onPress={() => navigation.navigate('EditSnack', { snackId: s.id })}
                 >
                   <Text style={styles.listItemText}>{s.text}</Text>
                   <Text style={styles.listItemMeta}>

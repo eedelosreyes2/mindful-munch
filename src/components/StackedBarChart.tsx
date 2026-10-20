@@ -95,7 +95,7 @@ export default function StackedBarChart({
           </View>
         )}
       </View>
-      <View style={[styles.labelRow, { width: chartWidth }]}>
+      <View style={[styles.labelRow, { width: chartWidth, marginLeft: -gap / 2 }]}>
         {buckets.map((bucket, i) => (
           <Text
             key={i}

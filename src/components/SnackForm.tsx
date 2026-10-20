@@ -9,6 +9,9 @@ import {
   Platform,
   Keyboard,
   Modal,
+  ScrollView,
+  StyleProp,
+  ViewStyle,
   useColorScheme,
 } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from './DateTimePicker';
@@ -49,6 +52,10 @@ interface Props {
   quickSelectOptions?: string[];
   onRemoveQuickSelectOption?: (text: string) => void;
   onPickerVisibilityChange?: (visible: boolean) => void;
+  header?: React.ReactNode;
+  footer?: React.ReactNode;
+  pinSubmit?: boolean;
+  contentStyle?: StyleProp<ViewStyle>;
 }
 
 export default function SnackForm({
@@ -63,6 +70,10 @@ export default function SnackForm({
   quickSelectOptions = [],
   onRemoveQuickSelectOption,
   onPickerVisibilityChange,
+  header,
+  footer,
+  pinSubmit = false,
+  contentStyle,
 }: Props) {
   const colors = useTheme();
   const styles = getStyles(colors);
@@ -150,13 +161,8 @@ export default function SnackForm({
     if (activePicker) setActivePicker(null);
   };
 
-  return (
-    <TouchableWithoutFeedback
-      onPress={dismissPicker}
-      accessible={false}
-      disabled={Platform.OS === 'web'}
-    >
-    <View>
+  const fields = (
+    <>
       {quickSelectOptions.length > 0 && (
         <>
           <Text style={styles.subheading}>Recent</Text>
@@ -194,7 +200,7 @@ export default function SnackForm({
           value={text}
           onChangeText={setText}
           returnKeyType="done"
-          onSubmitEditing={Keyboard.dismiss}
+          onSubmitEditing={Platform.OS === 'web' ? handleSubmit : Keyboard.dismiss}
           autoFocus={autoFocus}
         />
         {text.length > 0 && (
@@ -263,38 +269,89 @@ export default function SnackForm({
           )}
         </View>
       )}
+    </>
+  );
 
-      <TouchableOpacity
-        style={[styles.submitButton, !text.trim() && styles.submitButtonDisabled]}
-        onPress={handleSubmit}
-        disabled={!text.trim()}
-      >
-        <Text style={styles.submitButtonText}>{submitLabel}</Text>
-      </TouchableOpacity>
+  const submitButton = (
+    <TouchableOpacity
+      style={[
+        styles.submitButton,
+        pinSubmit && styles.submitButtonPinned,
+        !text.trim() && styles.submitButtonDisabled,
+      ]}
+      onPress={handleSubmit}
+      disabled={!text.trim()}
+    >
+      <Text style={styles.submitButtonText}>{submitLabel}</Text>
+    </TouchableOpacity>
+  );
 
-      <Modal
-        visible={showReasonPrompt}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowReasonPrompt(false)}
-      >
-        <View style={styles.promptBackdrop}>
-          <View style={styles.promptCard}>
-            <Text style={styles.promptTitle}>Log without a reason?</Text>
-            <TouchableOpacity
-              style={styles.promptPrimaryButton}
-              onPress={() => setShowReasonPrompt(false)}
-            >
-              <Text style={styles.promptPrimaryButtonText}>Add a reason</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.promptSecondaryButton} onPress={handleLogAnyway}>
-              <Text style={styles.promptSecondaryText}>Log anyway</Text>
-            </TouchableOpacity>
-          </View>
+  const reasonPrompt = (
+    <Modal
+      visible={showReasonPrompt}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setShowReasonPrompt(false)}
+    >
+      <View style={styles.promptBackdrop}>
+        <View style={styles.promptCard}>
+          <Text style={styles.promptTitle}>Log without a reason?</Text>
+          <TouchableOpacity
+            style={styles.promptPrimaryButton}
+            onPress={() => setShowReasonPrompt(false)}
+          >
+            <Text style={styles.promptPrimaryButtonText}>Add a reason</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.promptSecondaryButton} onPress={handleLogAnyway}>
+            <Text style={styles.promptSecondaryText}>Log anyway</Text>
+          </TouchableOpacity>
         </View>
-      </Modal>
-    </View>
+      </View>
+    </Modal>
+  );
+
+  const dismissArea = (content: React.ReactNode) => (
+    <TouchableWithoutFeedback
+      onPress={dismissPicker}
+      accessible={false}
+      disabled={Platform.OS === 'web'}
+    >
+      <View>{content}</View>
     </TouchableWithoutFeedback>
+  );
+
+  if (pinSubmit) {
+    return (
+      <View style={styles.pinnedRoot}>
+        <ScrollView
+          style={styles.pinnedRoot}
+          contentContainerStyle={contentStyle}
+          keyboardShouldPersistTaps="handled"
+        >
+          {dismissArea(
+            <>
+              {header}
+              {fields}
+            </>
+          )}
+        </ScrollView>
+        <View style={styles.pinnedActions}>
+          {submitButton}
+          {footer}
+        </View>
+        {reasonPrompt}
+      </View>
+    );
+  }
+
+  return dismissArea(
+    <>
+      {header}
+      {fields}
+      {submitButton}
+      {footer}
+      {reasonPrompt}
+    </>
   );
 }
 
@@ -405,6 +462,17 @@ function getStyles(colors: ThemeColors) {
       alignItems: 'center',
       marginBottom: 24,
     },
+    submitButtonPinned: {
+      marginBottom: 16,
+    },
+    pinnedRoot: {
+      flex: 1,
+    },
+    pinnedActions: {
+      paddingHorizontal: 24,
+      paddingTop: 12,
+      paddingBottom: 32,
+    },
     submitButtonDisabled: {
       opacity: 0.35,
     },
@@ -422,6 +490,7 @@ function getStyles(colors: ThemeColors) {
     },
     promptCard: {
       width: '100%',
+      maxWidth: 340,
       backgroundColor: colors.surface,
       borderRadius: 16,
       padding: 24,

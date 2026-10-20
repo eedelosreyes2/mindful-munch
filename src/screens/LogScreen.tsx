@@ -3,11 +3,8 @@ import {
   View,
   Text,
   TouchableOpacity,
-  TouchableWithoutFeedback,
-  Keyboard,
   StyleSheet,
   KeyboardAvoidingView,
-  ScrollView,
   Platform,
   Animated,
 } from 'react-native';
@@ -70,41 +67,31 @@ export default function LogScreen({ navigation }: any) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[styles.content, { paddingTop: topPadding }]}
-        keyboardShouldPersistTaps="handled"
-      >
-        <TouchableWithoutFeedback
-          onPress={Keyboard.dismiss}
-          accessible={false}
-          disabled={Platform.OS === 'web'}
-        >
-          <View>
-            <View style={styles.headerRow}>
-              <Text style={styles.heading}>Log a snack</Text>
-              <TouchableOpacity
-                style={styles.settingsButton}
-                onPress={() => navigation.navigate('Settings')}
-              >
-                <Feather name="settings" size={18} color={colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
-
-            <SnackForm
-              submitLabel="Log it"
-              onSubmit={handleLog}
-              resetAfterSubmit
-              quickSelectOptions={quickSelectOptions}
-              onRemoveQuickSelectOption={handleRemoveQuickSelectOption}
-            />
-
-            <TouchableOpacity onPress={() => navigation.navigate('Today')}>
-              <Text style={styles.linkText}>View log →</Text>
+      <SnackForm
+        submitLabel="Log it"
+        onSubmit={handleLog}
+        resetAfterSubmit
+        quickSelectOptions={quickSelectOptions}
+        onRemoveQuickSelectOption={handleRemoveQuickSelectOption}
+        pinSubmit
+        contentStyle={[styles.content, { paddingTop: topPadding }]}
+        header={
+          <View style={styles.headerRow}>
+            <Text style={styles.heading}>Log a snack</Text>
+            <TouchableOpacity
+              style={styles.settingsButton}
+              onPress={() => navigation.navigate('Settings')}
+            >
+              <Feather name="settings" size={18} color={colors.textPrimary} />
             </TouchableOpacity>
           </View>
-        </TouchableWithoutFeedback>
-      </ScrollView>
+        }
+        footer={
+          <TouchableOpacity onPress={() => navigation.navigate('Today')}>
+            <Text style={styles.linkText}>View log →</Text>
+          </TouchableOpacity>
+        }
+      />
 
       {showConfirm && (
         <Animated.View
@@ -138,12 +125,9 @@ function getStyles(colors: ThemeColors) {
       flex: 1,
       backgroundColor: colors.background,
     },
-    scrollView: {
-      flex: 1,
-    },
     content: {
       paddingHorizontal: 24,
-      paddingBottom: 24,
+      paddingBottom: 12,
     },
     headerRow: {
       flexDirection: 'row',

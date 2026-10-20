@@ -6,6 +6,7 @@ import {
   DefaultTheme,
   DarkTheme,
   createNavigationContainerRef,
+  LinkingOptions,
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -16,7 +17,6 @@ import EditSnackScreen from './src/screens/EditSnackScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import { ThemeProvider, useTheme, useThemeSettings } from './src/theme/colors';
 import { MAX_WEB_APP_WIDTH } from './src/theme/layout';
-import { Snack } from './src/types/snack';
 import {
   scheduleWeeklyInsightNotification,
   useLastNotificationResponse,
@@ -27,12 +27,29 @@ export type RootStackParamList = {
   Onboarding: { viewOnly?: boolean } | undefined;
   Log: undefined;
   Today: { initialViewMode?: 'today' | 'week' } | undefined;
-  EditSnack: { snack: Snack };
+  EditSnack: { snackId: string };
   Settings: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const navigationRef = createNavigationContainerRef<RootStackParamList>();
+
+const webLinking: LinkingOptions<RootStackParamList> = {
+  prefixes: [],
+  config: {
+    initialRouteName: 'Log',
+    screens: {
+      Log: '',
+      Today: 'log',
+      EditSnack: 'edit/:snackId',
+      Settings: 'settings',
+      Onboarding: {
+        path: 'welcome',
+        parse: { viewOnly: (value: string) => value === 'true' },
+      },
+    },
+  },
+};
 
 export default function App() {
   return (
@@ -99,6 +116,8 @@ function AppContent() {
             ref={navigationRef}
             theme={isDark ? DarkTheme : DefaultTheme}
             onReady={tryHandleNotificationDeepLink}
+            linking={Platform.OS === 'web' && initialRoute === 'Log' ? webLinking : undefined}
+            documentTitle={{ formatter: () => 'MindfulMunch' }}
           >
             <Stack.Navigator
               initialRouteName={initialRoute}

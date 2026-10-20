@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import {
 import { ThemeColors, useTheme } from '../theme/colors';
 import { useScreenTopPadding } from '../theme/layout';
 import { Snack } from '../types/snack';
-import { updateSnack, deleteSnack } from '../storage/snackStorage';
+import { deleteSnack, getAllSnacks, updateSnack } from '../storage/snackStorage';
 import SnackForm, { SnackFormValues } from '../components/SnackForm';
 import { notify } from '../lib/notify';
 
@@ -22,18 +22,23 @@ export default function EditSnackScreen({ navigation, route }: any) {
   const colors = useTheme();
   const styles = getStyles(colors);
   const topPadding = useScreenTopPadding(80);
-  const snack: Snack = route.params.snack;
+  const snackId: string = route.params.snackId;
+  const [snack, setSnack] = useState<Snack | null | undefined>(undefined);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [footerHeight, setFooterHeight] = useState(0);
 
+  useEffect(() => {
+    getAllSnacks().then((all) => setSnack(all.find((s) => s.id === snackId) ?? null));
+  }, [snackId]);
+
   const handleSave = async (values: SnackFormValues) => {
-    await updateSnack(snack.id, values);
+    await updateSnack(snackId, values);
     navigation.goBack();
   };
 
   const confirmDelete = async () => {
     try {
-      await deleteSnack(snack.id);
+      await deleteSnack(snackId);
       navigation.goBack();
     } catch (err) {
       console.error('Failed to delete snack', err);
@@ -52,6 +57,19 @@ export default function EditSnackScreen({ navigation, route }: any) {
       { text: 'Delete', style: 'destructive', onPress: confirmDelete },
     ]);
   };
+
+  if (snack === undefined) return <View style={styles.container} />;
+
+  if (snack === null) {
+    return (
+      <View style={[styles.container, styles.missing, { paddingTop: topPadding }]}>
+        <Text style={styles.missingText}>This entry isn't available anymore.</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Today')}>
+          <Text style={styles.linkText}>Back to log</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -123,6 +141,15 @@ function getStyles(colors: ThemeColors) {
     content: {
       paddingHorizontal: 24,
       paddingBottom: 24,
+    },
+    missing: {
+      paddingHorizontal: 24,
+      gap: 16,
+    },
+    missingText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center',
     },
     heading: {
       fontSize: 26,
