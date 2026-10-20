@@ -10,6 +10,8 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeColors, useTheme } from '../theme/colors';
 import { getAppWidth } from '../theme/layout';
+import { isCloudSyncAvailable, signInWithGoogle } from '../lib/auth';
+import { notify } from '../lib/notify';
 
 const ONBOARDING_KEY = 'onboarded:v1';
 const SWIPE_THRESHOLD = 60;
@@ -99,6 +101,17 @@ export default function OnboardingScreen({ navigation, route }: any) {
     navigation.replace('Log');
   };
 
+  const handleSignIn = async () => {
+    await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      console.error('Failed to sign in', err);
+      notify("Couldn't sign in", 'You can try again anytime from Settings.');
+      navigation.replace('Log');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.viewport} {...panResponder.panHandlers}>
@@ -125,6 +138,13 @@ export default function OnboardingScreen({ navigation, route }: any) {
             {isLast ? (viewOnly ? 'Done' : 'Get started') : 'Next'}
           </Text>
         </TouchableOpacity>
+        {isCloudSyncAvailable && !viewOnly && (
+          <TouchableOpacity style={styles.signInLink} onPress={handleSignIn}>
+            <Text style={styles.signInText}>
+              Already have an account? <Text style={styles.signInEmphasis}>Sign in</Text>
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -172,6 +192,18 @@ function getStyles(colors: ThemeColors) {
     },
     dotActive: {
       backgroundColor: colors.textPrimary,
+    },
+    signInLink: {
+      alignItems: 'center',
+      paddingTop: 18,
+    },
+    signInText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    signInEmphasis: {
+      fontWeight: '600',
+      color: colors.textPrimary,
     },
     button: {
       backgroundColor: colors.accent,

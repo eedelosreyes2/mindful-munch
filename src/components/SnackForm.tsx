@@ -14,6 +14,7 @@ import {
 import DateTimePicker, { DateTimePickerEvent } from './DateTimePicker';
 import { Feather } from '@expo/vector-icons';
 import { ThemeColors, useTheme } from '../theme/colors';
+import { notify } from '../lib/notify';
 import { REASON_TAGS, REASON_LABELS, ReasonTag } from '../types/snack';
 
 function formatWhen(date: Date): string {
@@ -107,11 +108,17 @@ export default function SnackForm({
   };
 
   const submit = async () => {
-    await onSubmit({
-      text: text.trim(),
-      reason: selectedReason,
-      timestamp: loggedAt.getTime(),
-    });
+    try {
+      await onSubmit({
+        text: text.trim(),
+        reason: selectedReason,
+        timestamp: loggedAt.getTime(),
+      });
+    } catch (err) {
+      console.error('Failed to save snack', err);
+      notify("Couldn't save", 'Check your connection and try again.');
+      return;
+    }
 
     setActivePicker(null);
 

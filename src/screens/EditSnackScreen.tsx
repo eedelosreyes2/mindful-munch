@@ -15,6 +15,7 @@ import { ThemeColors, useTheme } from '../theme/colors';
 import { Snack } from '../types/snack';
 import { updateSnack, deleteSnack } from '../storage/snackStorage';
 import SnackForm, { SnackFormValues } from '../components/SnackForm';
+import { notify } from '../lib/notify';
 
 export default function EditSnackScreen({ navigation, route }: any) {
   const colors = useTheme();
@@ -28,24 +29,25 @@ export default function EditSnackScreen({ navigation, route }: any) {
     navigation.goBack();
   };
 
+  const confirmDelete = async () => {
+    try {
+      await deleteSnack(snack.id);
+      navigation.goBack();
+    } catch (err) {
+      console.error('Failed to delete snack', err);
+      notify("Couldn't delete", 'Check your connection and try again.');
+    }
+  };
+
   const handleDelete = () => {
     if (Platform.OS === 'web') {
-      if (window.confirm('Delete this entry?')) {
-        deleteSnack(snack.id).then(() => navigation.goBack());
-      }
+      if (window.confirm('Delete this entry?')) confirmDelete();
       return;
     }
 
     Alert.alert('Delete this entry?', undefined, [
       { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          await deleteSnack(snack.id);
-          navigation.goBack();
-        },
-      },
+      { text: 'Delete', style: 'destructive', onPress: confirmDelete },
     ]);
   };
 
