@@ -15,6 +15,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { ThemeColors, useTheme } from '../theme/colors';
+import { useScreenTopPadding } from '../theme/layout';
 import {
   addSnack,
   getAllSnacks,
@@ -27,6 +28,7 @@ import SnackForm, { SnackFormValues } from '../components/SnackForm';
 export default function LogScreen({ navigation }: any) {
   const colors = useTheme();
   const styles = getStyles(colors);
+  const topPadding = useScreenTopPadding(80);
   const insets = useSafeAreaInsets();
   const [confirmAnim] = useState(new Animated.Value(0));
   const [showConfirm, setShowConfirm] = useState(false);
@@ -70,7 +72,7 @@ export default function LogScreen({ navigation }: any) {
     >
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: topPadding }]}
         keyboardShouldPersistTaps="handled"
       >
         <TouchableWithoutFeedback
@@ -141,7 +143,6 @@ function getStyles(colors: ThemeColors) {
     },
     content: {
       paddingHorizontal: 24,
-      paddingTop: 80,
       paddingBottom: 24,
     },
     headerRow: {

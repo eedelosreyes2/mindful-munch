@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { ThemeColors, ThemePreference, useTheme, useThemeSettings } from '../theme/colors';
+import { useScreenTopPadding } from '../theme/layout';
 import { exportSnacks } from '../storage/exportSnacks';
 import { isImportAvailable, pickAndImportSnacks } from '../storage/importSnacks';
 import SegmentedControl from '../components/SegmentedControl';
@@ -10,6 +11,7 @@ import { notify } from '../lib/notify';
 export default function SettingsScreen({ navigation }: any) {
   const colors = useTheme();
   const styles = getStyles(colors);
+  const topPadding = useScreenTopPadding(80);
   const { preference, setPreference } = useThemeSettings();
   const session = useSession();
 
@@ -55,7 +57,7 @@ export default function SettingsScreen({ navigation }: any) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: topPadding }]}>
       <View style={styles.content}>
         <Text style={styles.heading}>Settings</Text>
 
@@ -134,7 +136,6 @@ function getStyles(colors: ThemeColors) {
       backgroundColor: colors.background,
       justifyContent: 'space-between',
       paddingHorizontal: 24,
-      paddingTop: 80,
       paddingBottom: 40,
     },
     content: {

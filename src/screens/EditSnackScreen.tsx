@@ -12,6 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import { ThemeColors, useTheme } from '../theme/colors';
+import { useScreenTopPadding } from '../theme/layout';
 import { Snack } from '../types/snack';
 import { updateSnack, deleteSnack } from '../storage/snackStorage';
 import SnackForm, { SnackFormValues } from '../components/SnackForm';
@@ -20,6 +21,7 @@ import { notify } from '../lib/notify';
 export default function EditSnackScreen({ navigation, route }: any) {
   const colors = useTheme();
   const styles = getStyles(colors);
+  const topPadding = useScreenTopPadding(80);
   const snack: Snack = route.params.snack;
   const [pickerOpen, setPickerOpen] = useState(false);
   const [footerHeight, setFooterHeight] = useState(0);
@@ -69,7 +71,7 @@ export default function EditSnackScreen({ navigation, route }: any) {
       >
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[styles.content, { paddingTop: topPadding }]}
           keyboardShouldPersistTaps="handled"
         >
           <TouchableWithoutFeedback
@@ -120,7 +122,6 @@ function getStyles(colors: ThemeColors) {
     },
     content: {
       paddingHorizontal: 24,
-      paddingTop: 80,
       paddingBottom: 24,
     },
     heading: {

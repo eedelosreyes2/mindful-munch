@@ -9,10 +9,11 @@ import {
   PanResponderInstance,
   Animated,
   Easing,
+  Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { ThemeColors, useTheme } from '../theme/colors';
-import { getAppWidth } from '../theme/layout';
+import { getAppWidth, useScreenTopPadding } from '../theme/layout';
 import { REASON_LABELS, REASON_TAGS, Snack } from '../types/snack';
 import {
   getAllSnacks,
@@ -214,6 +215,38 @@ function useSwipeCarousel(
   return { drag, swipeResponder, animateTo };
 }
 
+// On short phone browsers the chart leaves no room for the list, so web scrolls the whole screen instead.
+function PageBody({ children }: { children: React.ReactNode }) {
+  if (Platform.OS !== 'web') return <>{children}</>;
+  return (
+    <ScrollView style={layoutStyles.fill} contentContainerStyle={layoutStyles.pageContent}>
+      {children}
+    </ScrollView>
+  );
+}
+
+function ListBody({ children }: { children: React.ReactNode }) {
+  if (Platform.OS === 'web') return <View style={layoutStyles.listContent}>{children}</View>;
+  return (
+    <ScrollView style={layoutStyles.fill} contentContainerStyle={layoutStyles.listContent}>
+      {children}
+    </ScrollView>
+  );
+}
+
+const layoutStyles = StyleSheet.create({
+  fill: {
+    flex: 1,
+  },
+  pageContent: {
+    flexGrow: 1,
+  },
+  listContent: {
+    paddingTop: 12,
+    paddingBottom: 12,
+  },
+});
+
 const carouselStyles = StyleSheet.create({
   carouselViewport: {
     overflow: 'hidden',
@@ -286,6 +319,7 @@ function ChartCarousel({
 export default function TodayScreen({ navigation, route }: any) {
   const colors = useTheme();
   const styles = getStyles(colors);
+  const topPadding = useScreenTopPadding(60);
   const [viewMode, setViewMode] = useState<ViewMode>(route?.params?.initialViewMode ?? 'today');
   const [dayOffset, setDayOffset] = useState(0);
   const [weekOffset, setWeekOffset] = useState(0);
@@ -365,139 +399,141 @@ export default function TodayScreen({ navigation, route }: any) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.topSection}>
-        <SegmentedControl
-          options={[
-            { label: 'Today', value: 'today' },
-            { label: 'Week', value: 'week' },
-          ]}
-          value={viewMode}
-          onChange={setViewMode}
-        />
+      <PageBody>
+        <View style={[styles.topSection, { paddingTop: topPadding }]}>
+          <SegmentedControl
+            options={[
+              { label: 'Today', value: 'today' },
+              { label: 'Week', value: 'week' },
+            ]}
+            value={viewMode}
+            onChange={setViewMode}
+          />
 
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>
-              {viewMode === 'today' ? 'Snacks today' : 'Snacks this week'}
+          <View style={styles.statsRow}>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>
+                {viewMode === 'today' ? 'Snacks today' : 'Snacks this week'}
+              </Text>
+              <Text style={styles.statValue}>{activeSnacks.length}</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>Most common reason</Text>
+              <Text style={styles.statValue}>{topReasonLabel(activeSnacks)}</Text>
+            </View>
+          </View>
+
+          <ReasonLegend />
+
+          {viewMode === 'today' ? (
+            <ChartCarousel
+              width={chartWidth}
+              drag={day.drag}
+              panHandlers={day.swipeResponder.panHandlers}
+              previousBuckets={previousDayBuckets}
+              currentBuckets={currentDayBuckets}
+              nextBuckets={nextDayBuckets}
+              barWidth={dayBarWidth}
+              gap={dayBarGap}
+              showEveryNthLabel={2}
+              onSelectBar={(index) => setSelectedBarSummary(summarizeBucket(currentDayBuckets[index]))}
+            />
+          ) : (
+            <ChartCarousel
+              width={chartWidth}
+              drag={week.drag}
+              panHandlers={week.swipeResponder.panHandlers}
+              previousBuckets={previousWeekBuckets}
+              currentBuckets={currentWeekBuckets}
+              nextBuckets={nextWeekBuckets}
+              barWidth={weekBarWidth}
+              gap={weekBarGap}
+              onSelectBar={(index) => setSelectedBarSummary(summarizeBucket(currentWeekBuckets[index]))}
+            />
+          )}
+
+          <Text style={styles.barSummary} numberOfLines={1}>
+            {selectedBarSummary ?? ' '}
+          </Text>
+
+          <View style={styles.navRow}>
+            <TouchableOpacity
+              style={styles.navButton}
+              onPress={() => (viewMode === 'today' ? day.animateTo('previous') : week.animateTo('previous'))}
+              disabled={viewMode === 'today' && dayOffset >= maxDayOffset}
+            >
+              <Text
+                style={[
+                  styles.navArrow,
+                  viewMode === 'today' && dayOffset >= maxDayOffset && styles.navArrowDisabled,
+                ]}
+              >
+                ‹
+              </Text>
+            </TouchableOpacity>
+            <Text style={styles.navLabel}>
+              {viewMode === 'today' ? dayLabel : formatWeekRange(displayedWeekStart, weekOffset)}
             </Text>
-            <Text style={styles.statValue}>{activeSnacks.length}</Text>
+            <TouchableOpacity
+              style={styles.navButton}
+              onPress={() => (viewMode === 'today' ? day.animateTo('next') : week.animateTo('next'))}
+              disabled={viewMode === 'today' ? dayOffset === 0 : weekOffset === 0}
+            >
+              <Text
+                style={[
+                  styles.navArrow,
+                  (viewMode === 'today' ? dayOffset === 0 : weekOffset === 0) &&
+                    styles.navArrowDisabled,
+                ]}
+              >
+                ›
+              </Text>
+            </TouchableOpacity>
           </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Most common reason</Text>
-            <Text style={styles.statValue}>{topReasonLabel(activeSnacks)}</Text>
-          </View>
-        </View>
 
-        <ReasonLegend />
+          {viewMode === 'today' && dayOffset > 0 && (
+            <TouchableOpacity style={styles.backToPresent} onPress={() => setDayOffset(0)}>
+              <Text style={styles.backToPresentText}>Back to today</Text>
+            </TouchableOpacity>
+          )}
+          {viewMode === 'week' && weekOffset > 0 && (
+            <TouchableOpacity style={styles.backToPresent} onPress={() => setWeekOffset(0)}>
+              <Text style={styles.backToPresentText}>Back to this week</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
         {viewMode === 'today' ? (
-          <ChartCarousel
-            width={chartWidth}
-            drag={day.drag}
-            panHandlers={day.swipeResponder.panHandlers}
-            previousBuckets={previousDayBuckets}
-            currentBuckets={currentDayBuckets}
-            nextBuckets={nextDayBuckets}
-            barWidth={dayBarWidth}
-            gap={dayBarGap}
-            showEveryNthLabel={2}
-            onSelectBar={(index) => setSelectedBarSummary(summarizeBucket(currentDayBuckets[index]))}
-          />
-        ) : (
-          <ChartCarousel
-            width={chartWidth}
-            drag={week.drag}
-            panHandlers={week.swipeResponder.panHandlers}
-            previousBuckets={previousWeekBuckets}
-            currentBuckets={currentWeekBuckets}
-            nextBuckets={nextWeekBuckets}
-            barWidth={weekBarWidth}
-            gap={weekBarGap}
-            onSelectBar={(index) => setSelectedBarSummary(summarizeBucket(currentWeekBuckets[index]))}
-          />
-        )}
-
-        <Text style={styles.barSummary} numberOfLines={1}>
-          {selectedBarSummary ?? ' '}
-        </Text>
-
-        <View style={styles.navRow}>
-          <TouchableOpacity
-            style={styles.navButton}
-            onPress={() => (viewMode === 'today' ? day.animateTo('previous') : week.animateTo('previous'))}
-            disabled={viewMode === 'today' && dayOffset >= maxDayOffset}
-          >
-            <Text
-              style={[
-                styles.navArrow,
-                viewMode === 'today' && dayOffset >= maxDayOffset && styles.navArrowDisabled,
-              ]}
-            >
-              ‹
-            </Text>
-          </TouchableOpacity>
-          <Text style={styles.navLabel}>
-            {viewMode === 'today' ? dayLabel : formatWeekRange(displayedWeekStart, weekOffset)}
-          </Text>
-          <TouchableOpacity
-            style={styles.navButton}
-            onPress={() => (viewMode === 'today' ? day.animateTo('next') : week.animateTo('next'))}
-            disabled={viewMode === 'today' ? dayOffset === 0 : weekOffset === 0}
-          >
-            <Text
-              style={[
-                styles.navArrow,
-                (viewMode === 'today' ? dayOffset === 0 : weekOffset === 0) &&
-                  styles.navArrowDisabled,
-              ]}
-            >
-              ›
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {viewMode === 'today' && dayOffset > 0 && (
-          <TouchableOpacity style={styles.backToPresent} onPress={() => setDayOffset(0)}>
-            <Text style={styles.backToPresentText}>Back to today</Text>
-          </TouchableOpacity>
-        )}
-        {viewMode === 'week' && weekOffset > 0 && (
-          <TouchableOpacity style={styles.backToPresent} onPress={() => setWeekOffset(0)}>
-            <Text style={styles.backToPresentText}>Back to this week</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {viewMode === 'today' ? (
-        <View style={styles.listSection}>
-          <Text style={styles.listHeading}>{listHeadingText}</Text>
-          <ScrollView style={styles.listScroll} contentContainerStyle={styles.listContent}>
-            {displayedDaySnacks.length === 0 && (
-              <Text style={styles.emptyText}>
-                {dayOffset === 0 ? 'Nothing yet today.' : 'Nothing logged that day.'}
-              </Text>
-            )}
-            {[...displayedDaySnacks].reverse().map((s) => (
-              <TouchableOpacity
-                key={s.id}
-                style={styles.listItem}
-                onPress={() => navigation.navigate('EditSnack', { snack: s })}
-              >
-                <Text style={styles.listItemText}>{s.text}</Text>
-                <Text style={styles.listItemMeta}>
-                  {new Date(s.timestamp).toLocaleTimeString([], {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                  })}
-                  {s.reason ? ` · ${REASON_LABELS[s.reason]}` : ''}
+          <View style={styles.listSection}>
+            <Text style={styles.listHeading}>{listHeadingText}</Text>
+            <ListBody>
+              {displayedDaySnacks.length === 0 && (
+                <Text style={styles.emptyText}>
+                  {dayOffset === 0 ? 'Nothing yet today.' : 'Nothing logged that day.'}
                 </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      ) : (
-        <View style={styles.listSection} />
-      )}
+              )}
+              {[...displayedDaySnacks].reverse().map((s) => (
+                <TouchableOpacity
+                  key={s.id}
+                  style={styles.listItem}
+                  onPress={() => navigation.navigate('EditSnack', { snack: s })}
+                >
+                  <Text style={styles.listItemText}>{s.text}</Text>
+                  <Text style={styles.listItemMeta}>
+                    {new Date(s.timestamp).toLocaleTimeString([], {
+                      hour: 'numeric',
+                      minute: '2-digit',
+                    })}
+                    {s.reason ? ` · ${REASON_LABELS[s.reason]}` : ''}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ListBody>
+          </View>
+        ) : (
+          <View style={styles.listSection} />
+        )}
+      </PageBody>
 
       <TouchableOpacity style={styles.logMoreButton} onPress={() => navigation.goBack()}>
         <Text style={styles.logMoreText}>+ Log a snack</Text>
@@ -514,7 +550,6 @@ function getStyles(colors: ThemeColors) {
   },
   topSection: {
     paddingHorizontal: 24,
-    paddingTop: 60,
   },
   barSummary: {
     marginTop: 6,
@@ -594,13 +629,6 @@ function getStyles(colors: ThemeColors) {
     flex: 1,
     paddingHorizontal: 24,
     paddingTop: 20,
-  },
-  listScroll: {
-    flex: 1,
-  },
-  listContent: {
-    paddingTop: 12,
-    paddingBottom: 12,
   },
   listHeading: {
     fontSize: 16,
