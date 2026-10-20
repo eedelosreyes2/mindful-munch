@@ -11,7 +11,7 @@ import {
   Modal,
   useColorScheme,
 } from 'react-native';
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerEvent } from './DateTimePicker';
 import { Feather } from '@expo/vector-icons';
 import { ThemeColors, useTheme } from '../theme/colors';
 import { REASON_TAGS, REASON_LABELS, ReasonTag } from '../types/snack';
@@ -144,7 +144,11 @@ export default function SnackForm({
   };
 
   return (
-    <TouchableWithoutFeedback onPress={dismissPicker} accessible={false}>
+    <TouchableWithoutFeedback
+      onPress={dismissPicker}
+      accessible={false}
+      disabled={Platform.OS === 'web'}
+    >
     <View>
       {quickSelectOptions.length > 0 && (
         <>
@@ -236,7 +240,7 @@ export default function SnackForm({
       </View>
 
       {activePicker && (
-        <View style={Platform.OS === 'ios' ? styles.pickerContainer : undefined}>
+        <View style={Platform.OS !== 'android' ? styles.pickerContainer : undefined}>
           <DateTimePicker
             value={loggedAt}
             mode={activePicker}
@@ -245,7 +249,7 @@ export default function SnackForm({
             maximumDate={new Date()}
             onChange={handlePickerChange}
           />
-          {Platform.OS === 'ios' && (
+          {Platform.OS !== 'android' && (
             <TouchableOpacity style={styles.pickerDoneButton} onPress={() => setActivePicker(null)}>
               <Text style={styles.pickerDoneText}>Done</Text>
             </TouchableOpacity>

@@ -9,10 +9,10 @@ import {
   PanResponderInstance,
   Animated,
   Easing,
-  Dimensions,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { ThemeColors, useTheme } from '../theme/colors';
+import { getAppWidth } from '../theme/layout';
 import { REASON_LABELS, REASON_TAGS, Snack } from '../types/snack';
 import {
   getAllSnacks,
@@ -316,7 +316,7 @@ export default function TodayScreen({ navigation, route }: any) {
     (startOfToday.getTime() - getCurrentWeekStart().getTime()) / (1000 * 60 * 60 * 24)
   );
 
-  const chartWidth = Math.max(0, Dimensions.get('window').width - CONTENT_PADDING * 2);
+  const chartWidth = Math.max(0, getAppWidth() - CONTENT_PADDING * 2);
   const { barWidth: dayBarWidth, gap: dayBarGap } = computeBarDims(chartWidth, HOUR_LABELS_COUNT);
   const { barWidth: weekBarWidth, gap: weekBarGap } = computeBarDims(chartWidth, DAY_LABELS.length);
 

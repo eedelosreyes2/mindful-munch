@@ -6,10 +6,10 @@ import {
   TouchableOpacity,
   Animated,
   PanResponder,
-  Dimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeColors, useTheme } from '../theme/colors';
+import { getAppWidth } from '../theme/layout';
 
 const ONBOARDING_KEY = 'onboarded:v1';
 const SWIPE_THRESHOLD = 60;
@@ -32,7 +32,7 @@ export default function OnboardingScreen({ navigation, route }: any) {
   const isLast = step === SLIDES.length - 1;
   const viewOnly = route?.params?.viewOnly ?? false;
 
-  const paneWidth = Dimensions.get('window').width;
+  const paneWidth = getAppWidth();
   const drag = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {

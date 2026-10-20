@@ -29,6 +29,13 @@ export default function EditSnackScreen({ navigation, route }: any) {
   };
 
   const handleDelete = () => {
+    if (Platform.OS === 'web') {
+      if (window.confirm('Delete this entry?')) {
+        deleteSnack(snack.id).then(() => navigation.goBack());
+      }
+      return;
+    }
+
     Alert.alert('Delete this entry?', undefined, [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -63,7 +70,11 @@ export default function EditSnackScreen({ navigation, route }: any) {
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <TouchableWithoutFeedback
+            onPress={Keyboard.dismiss}
+            accessible={false}
+            disabled={Platform.OS === 'web'}
+          >
             <View>
               <Text style={styles.heading}>Edit snack</Text>
 

@@ -13,6 +13,8 @@ Notifications.setNotificationHandler({
   }),
 });
 
+export const useLastNotificationResponse = Notifications.useLastNotificationResponse;
+
 const ROTATION_KEY = 'weeklyInsight:rotationIndex';
 const SCHEDULED_ID_KEY = 'weeklyInsight:scheduledId';
 export const WEEKLY_INSIGHT_DEEP_LINK = 'week';

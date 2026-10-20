@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import {
   NavigationContainer,
@@ -9,16 +9,17 @@ import {
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import * as Notifications from 'expo-notifications';
 import OnboardingScreen, { hasOnboarded } from './src/screens/OnboardingScreen';
 import LogScreen from './src/screens/LogScreen';
 import TodayScreen from './src/screens/TodayScreen';
 import EditSnackScreen from './src/screens/EditSnackScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import { ThemeProvider, useTheme, useThemeSettings } from './src/theme/colors';
+import { MAX_WEB_APP_WIDTH } from './src/theme/layout';
 import { Snack } from './src/types/snack';
 import {
   scheduleWeeklyInsightNotification,
+  useLastNotificationResponse,
   WEEKLY_INSIGHT_DEEP_LINK,
 } from './src/notifications/weeklyInsight';
 
@@ -45,7 +46,7 @@ function AppContent() {
   const colors = useTheme();
   const { isDark } = useThemeSettings();
   const [initialRoute, setInitialRoute] = useState<'Onboarding' | 'Log' | null>(null);
-  const lastNotificationResponse = Notifications.useLastNotificationResponse();
+  const lastNotificationResponse = useLastNotificationResponse();
   const handledResponseRef = useRef<typeof lastNotificationResponse>(null);
 
   useEffect(() => {
@@ -85,25 +86,36 @@ function AppContent() {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer
-        ref={navigationRef}
-        theme={isDark ? DarkTheme : DefaultTheme}
-        onReady={tryHandleNotificationDeepLink}
-      >
-        <Stack.Navigator
-          initialRouteName={initialRoute}
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: colors.background },
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <View
+          style={{
+            flex: 1,
+            width: '100%',
+            maxWidth: Platform.OS === 'web' ? MAX_WEB_APP_WIDTH : undefined,
+            alignSelf: 'center',
           }}
         >
-          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-          <Stack.Screen name="Log" component={LogScreen} />
-          <Stack.Screen name="Today" component={TodayScreen} />
-          <Stack.Screen name="EditSnack" component={EditSnackScreen} />
-          <Stack.Screen name="Settings" component={SettingsScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
+          <NavigationContainer
+            ref={navigationRef}
+            theme={isDark ? DarkTheme : DefaultTheme}
+            onReady={tryHandleNotificationDeepLink}
+          >
+            <Stack.Navigator
+              initialRouteName={initialRoute}
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: colors.background },
+              }}
+            >
+              <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+              <Stack.Screen name="Log" component={LogScreen} />
+              <Stack.Screen name="Today" component={TodayScreen} />
+              <Stack.Screen name="EditSnack" component={EditSnackScreen} />
+              <Stack.Screen name="Settings" component={SettingsScreen} />
+            </Stack.Navigator>
+          </NavigationContainer>
+        </View>
+      </View>
       <StatusBar style="auto" />
     </SafeAreaProvider>
   );

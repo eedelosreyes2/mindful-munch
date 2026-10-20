@@ -73,7 +73,11 @@ export default function LogScreen({ navigation }: any) {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <TouchableWithoutFeedback
+          onPress={Keyboard.dismiss}
+          accessible={false}
+          disabled={Platform.OS === 'web'}
+        >
           <View>
             <View style={styles.headerRow}>
               <Text style={styles.heading}>Log a snack</Text>
