@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch } from 'react-native';
 import { ThemeColors, ThemePreference, useTheme, useThemeSettings } from '../theme/colors';
 import { useScreenTopPadding } from '../theme/layout';
 import { exportSnacks } from '../storage/exportSnacks';
@@ -7,6 +7,12 @@ import { isImportAvailable, pickAndImportSnacks } from '../storage/importSnacks'
 import SegmentedControl from '../components/SegmentedControl';
 import { isCloudSyncAvailable, signInWithGoogle, signOut, useSession } from '../lib/auth';
 import { notify } from '../lib/notify';
+import {
+  disableWeeklyPush,
+  enableWeeklyPush,
+  getWeeklyPushAvailability,
+  isWeeklyPushEnabled,
+} from '../lib/weeklyPush';
 
 export default function SettingsScreen({ navigation }: any) {
   const colors = useTheme();
@@ -14,6 +20,13 @@ export default function SettingsScreen({ navigation }: any) {
   const topPadding = useScreenTopPadding(80);
   const { preference, setPreference } = useThemeSettings();
   const session = useSession();
+  const pushAvailability = getWeeklyPushAvailability();
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+
+  useEffect(() => {
+    isWeeklyPushEnabled().then(setPushEnabled);
+  }, [session]);
 
   const handleExport = async () => {
     try {
@@ -38,6 +51,30 @@ export default function SettingsScreen({ navigation }: any) {
     }
   };
 
+  const handleTogglePush = async (turnOn: boolean) => {
+    setPushBusy(true);
+    try {
+      if (turnOn) {
+        const result = await enableWeeklyPush();
+        if (result === 'denied') {
+          notify(
+            'Notifications are off',
+            'Allow notifications for MindfulMunch in your browser or device settings, then try again.'
+          );
+        }
+        setPushEnabled(result === 'enabled');
+      } else {
+        await disableWeeklyPush();
+        setPushEnabled(false);
+      }
+    } catch (err) {
+      console.error('Failed to update the weekly insight', err);
+      notify("Couldn't update notifications", 'Check your connection and try again.');
+    } finally {
+      setPushBusy(false);
+    }
+  };
+
   const handleSignIn = async () => {
     try {
       await signInWithGoogle();
@@ -58,7 +95,7 @@ export default function SettingsScreen({ navigation }: any) {
 
   return (
     <View style={[styles.container, { paddingTop: topPadding }]}>
-      <View style={styles.content}>
+      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.heading}>Settings</Text>
 
         {isCloudSyncAvailable && (
@@ -84,6 +121,30 @@ export default function SettingsScreen({ navigation }: any) {
                 </Text>
               </TouchableOpacity>
             )}
+          </>
+        )}
+
+        {session && pushAvailability !== 'unsupported' && (
+          <>
+            <Text style={styles.sectionLabel}>Notifications</Text>
+            <View style={[styles.row, styles.accountRow]}>
+              <View style={styles.accountText}>
+                <Text style={styles.rowText}>Weekly insight</Text>
+                <Text style={styles.rowHint}>
+                  {pushAvailability === 'available'
+                    ? 'A short summary of your week, Sundays at 6 PM.'
+                    : 'Add MindfulMunch to your Home Screen (Share → Add to Home Screen) to turn this on.'}
+                </Text>
+              </View>
+              {pushAvailability === 'available' && (
+                <Switch
+                  value={pushEnabled}
+                  onValueChange={handleTogglePush}
+                  disabled={pushBusy}
+                  trackColor={{ true: colors.accent, false: colors.border }}
+                />
+              )}
+            </View>
           </>
         )}
 
@@ -120,9 +181,9 @@ export default function SettingsScreen({ navigation }: any) {
         >
           <Text style={styles.rowText}>View onboarding</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
 
-      <TouchableOpacity onPress={() => navigation.goBack()}>
+      <TouchableOpacity style={styles.doneButton} onPress={() => navigation.goBack()}>
         <Text style={styles.doneText}>Done</Text>
       </TouchableOpacity>
     </View>
@@ -140,6 +201,12 @@ function getStyles(colors: ThemeColors) {
     },
     content: {
       flex: 1,
+    },
+    scrollContent: {
+      paddingBottom: 8,
+    },
+    doneButton: {
+      paddingTop: 16,
     },
     heading: {
       fontSize: 26,

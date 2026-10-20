@@ -21,7 +21,7 @@ The **web app is the primary platform**, deployed on Vercel. It isn't headed for
 | Google sign-in and sync | Yes | No |
 | Import data | Yes | No |
 | Export data | Downloads a JSON file | Share sheet |
-| Weekly insight notification | No (`expo-notifications` is iOS/Android only) | Yes |
+| Weekly insight notification | Web push from Supabase (signed in; on iPhone, home-screen install only) | Local notification |
 | Time picker | Browser date-time input | iOS spinner |
 
 Web-only code lives in `.web.ts`/`.web.tsx` files next to their native counterparts; Metro picks the right one per platform.
@@ -30,7 +30,8 @@ Web-only code lives in `.web.ts`/`.web.tsx` files next to their native counterpa
 
 - [Expo](https://expo.dev) SDK 57 + React Native + TypeScript, with `react-native-web` for the web build
 - [React Navigation](https://reactnavigation.org) (native-stack), with URL linking on web
-- [Supabase](https://supabase.com) — Google sign-in and the `snacks` table (web only)
+- [Supabase](https://supabase.com) — Google sign-in, the `snacks` table, and the scheduled weekly-insight Edge Function (web only)
+- `web-push` (in the Edge Function) — sends the weekly insight as a Web Push notification
 - `@react-native-async-storage/async-storage` — local storage (localStorage on web)
 - `react-native-svg` — the stacked bar charts
 - `@react-native-community/datetimepicker` — the iOS time picker
@@ -41,8 +42,12 @@ Web-only code lives in `.web.ts`/`.web.tsx` files next to their native counterpa
 
 ```
 App.tsx                            Root navigator, theming, web URL linking, notification wiring
-public/                            Web index.html template, manifest, home-screen icons
-supabase/schema.sql                snacks table + row-level security policies
+public/                            Web index.html template, manifest, home-screen icons, sw.js (push service worker)
+supabase/
+  schema.sql                       snacks + push_subscriptions tables with row-level security
+  weekly-insight-cron.sql          Hourly pg_cron job that calls the Edge Function
+  functions/weekly-insight/        Edge Function that computes and sends the weekly insight
+  functions/_shared/insights.ts    Insight wording, shared by the Edge Function and the iPhone build
 src/
   types/snack.ts                   Snack type + the 7 reason tags
   theme/colors.tsx                 Light/dark palettes, ThemeProvider, useTheme()
@@ -51,12 +56,13 @@ src/
     supabase.ts / .web.ts          Supabase client (null on native, real client on web)
     auth.ts                        Google sign-in/out + useSession()
     notify.ts                      Alerts that also work in the browser
+    weeklyPush.ts / .web.ts        Turn the weekly insight push on/off for this browser
   storage/
     snackStorage.ts                CRUD (cloud when signed in, local otherwise) + day/week helpers
     exportSnacks.ts / .web.ts      Share sheet on native, file download on web
     importSnacks.ts / .web.ts      Import an exported JSON file (web only)
   notifications/
-    weeklyInsight.ts / .web.ts     Weekly insight computation + scheduling (no-op on web)
+    weeklyInsight.ts / .web.ts     iPhone local notification scheduling (no-op on web)
   components/
     StackedBarChart.tsx            Reusable SVG bar chart (hourly or daily buckets)
     SegmentedControl.tsx           Today/Week and theme toggles
@@ -129,6 +135,18 @@ The project is `douoivwmpytvuzoccpmi`. To recreate it, run `supabase/schema.sql`
 - **Authentication → Sign In / Providers → Google:** a Google Cloud OAuth client of type "Web application" whose authorized redirect URI is the callback URL shown on that page. The Google OAuth app is in Testing mode, so only accounts added as test users can sign in.
 - **Authentication → URL Configuration:** Site URL `https://mindfulmunch.vercel.app`; redirect URLs `https://mindfulmunch.vercel.app/**` and `http://localhost:8081/**`.
 
+The weekly insight push needs the Edge Function deployed, its secrets set, and the cron job scheduled. With the Supabase CLI logged in (`npx supabase login`):
+
+```bash
+npx supabase functions deploy weekly-insight --project-ref douoivwmpytvuzoccpmi --use-api --no-verify-jwt
+npx supabase secrets set --project-ref douoivwmpytvuzoccpmi --env-file <file>
+npx supabase db query --linked --project-ref douoivwmpytvuzoccpmi -f supabase/weekly-insight-cron.sql
+```
+
+- **Secrets:** `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (`https://mindfulmunch.vercel.app`), and `CRON_SECRET`. The public key must match `VAPID_PUBLIC_KEY` in `src/lib/weeklyPush.web.ts`. The private key and cron secret aren't in the repo; changing the VAPID keys invalidates every existing subscription.
+- **Vault:** the cron job reads `project_url` and `weekly_insight_cron_secret` (same value as `CRON_SECRET`) from Supabase Vault; see the comment at the top of `supabase/weekly-insight-cron.sql`.
+- **Auth:** the function skips JWT checks and instead requires the `x-cron-secret` header. Posting `{"force": true, "userId": "<id>"}` with that header sends immediately, which is useful for testing.
+
 ## Running the iPhone build
 
 The iPhone build needs Xcode on a Mac, with a free Apple ID signed in under Xcode → Settings → Accounts. Free signing only lasts about 7 days, after which the app needs reinstalling (its data survives a reinstall; deleting the app wipes it).
@@ -142,17 +160,19 @@ EXPO_USE_PRECOMPILED_MODULES=0 npx expo run:ios --device <device UDID> --configu
 - If the build fails with `No profiles for 'com.elijahdr.mindfulmunch' were found`, the signing profile expired. Run `xcodebuild` from `ios/` with `-allowProvisioningUpdates` to regenerate it, then install the built app with `xcrun devicectl device install app`.
 - After a re-sign, iOS may refuse to open the app until you trust the developer under Settings → General → VPN & Device Management.
 
-### Weekly insight notification (iPhone only)
+## Weekly insight notification
 
-Once a week, the app sends one local notification with a single rotating insight about your snacking — never a volume comparison ("you snacked more/less than last week"), since that framing implies a verdict.
+Once a week, the app sends one notification with a single rotating insight about your snacking — never a volume comparison ("you snacked more/less than last week"), since that framing implies a verdict.
 
-- **When:** every Sunday at 6:00 PM, device local time. A local notification can't regenerate its own text between firings, so the app reschedules a fresh one for the upcoming Sunday every time it's opened.
+- **On web:** turn it on in Settings → Notifications (signed in only; on iPhone, only from the home-screen install). The `weekly-insight` Edge Function runs hourly and sends to each subscribed browser when it's 6:00 PM Sunday in that browser's saved time zone, using the week that just ended. Each browser gets at most one per week, and expired subscriptions are removed. Signing out turns it off for that browser.
+- **On the iPhone build:** a local notification for Sunday at 6:00 PM. A local notification can't regenerate its own text between firings, so the app reschedules a fresh one every time it's opened.
 - **What it says:** rotates through three insight types — most common reason tag, most common time of day, and the "steadiest" day (closest to the week's average). If the type up next has no data, it falls back to the next; if nothing was logged that week, no notification is sent.
-- **On tap:** opens straight into the Week view.
+- **On tap:** opens the Week view (on web, scrolled to the week the insight describes).
 
 ## Known limitations and ideas
 
 - **The iPhone build has no sign-in.** Its snacks stay on the phone; move them to an account with Export on the phone and Import on the web.
+- **The weekly insight uses the time zone saved when it was turned on.** After moving time zones, turn it off and on again in Settings to update it.
 - **Week start day is hardcoded to Sunday.** `getCurrentWeekStart()` in `src/storage/snackStorage.ts` has a `TODO` to auto-detect it from the device's locale.
 - **Google's sign-in screen shows the Supabase project address** ("continue to douoivwmpytvuzoccpmi.supabase.co"). Showing a custom name needs Supabase's paid custom-domain add-on.
 - **Google sign-in from a home-screen install on iPhone is untested.** iOS can hand the sign-in redirect back to Safari instead of the home-screen app.

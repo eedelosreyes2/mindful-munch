@@ -322,7 +322,9 @@ export default function TodayScreen({ navigation, route }: any) {
   const topPadding = useScreenTopPadding(60);
   const [viewMode, setViewMode] = useState<ViewMode>(route?.params?.initialViewMode ?? 'today');
   const [dayOffset, setDayOffset] = useState(0);
-  const [weekOffset, setWeekOffset] = useState(0);
+  const [weekOffset, setWeekOffset] = useState(() =>
+    Math.max(0, Math.floor(Number(route?.params?.initialWeekOffset) || 0))
+  );
   const [allSnacks, setAllSnacks] = useState<Snack[]>([]);
   const [selectedBarSummary, setSelectedBarSummary] = useState<string | null>(null);
 

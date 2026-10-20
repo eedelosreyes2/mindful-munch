@@ -26,7 +26,7 @@ import {
 export type RootStackParamList = {
   Onboarding: { viewOnly?: boolean } | undefined;
   Log: undefined;
-  Today: { initialViewMode?: 'today' | 'week' } | undefined;
+  Today: { initialViewMode?: 'today' | 'week'; initialWeekOffset?: number } | undefined;
   EditSnack: { snackId: string };
   Settings: undefined;
 };
@@ -40,7 +40,10 @@ const webLinking: LinkingOptions<RootStackParamList> = {
     initialRouteName: 'Log',
     screens: {
       Log: '',
-      Today: 'log',
+      Today: {
+        path: 'log',
+        parse: { initialWeekOffset: Number },
+      },
       EditSnack: 'edit/:snackId',
       Settings: 'settings',
       Onboarding: {

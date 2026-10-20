@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import { clearCloudCache } from '../storage/snackStorage';
+import { disableWeeklyPush } from './weeklyPush';
 
 export const isCloudSyncAvailable = supabase !== null;
 
@@ -29,6 +30,7 @@ export async function signInWithGoogle(): Promise<void> {
 
 export async function signOut(): Promise<void> {
   if (!supabase) return;
+  await disableWeeklyPush().catch((err) => console.error('Failed to turn off the weekly insight', err));
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
   await clearCloudCache();
